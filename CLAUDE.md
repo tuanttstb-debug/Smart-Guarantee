@@ -19,4 +19,4 @@ Repo này theo chuẩn **AI OS Registry (Hub-and-Spoke)**. Tri thức dự án s
 - Trạng thái đa dự án (tự sinh): `AIOS/00_System/PORTFOLIO_DIGEST.md`.
 
 ## Kiến trúc & bối cảnh
-Xem `AI_CONTEXT/PROJECT_OVERVIEW.md` (+ `SYSTEM_ARCHITECTURE.md`, `BUSINESS_FLOW.md`… nếu có).
+Xem `AI_CONTEXT/PROJECT_OVERVIEW.md` → thiết kế chi tiết: `SYSTEM_ARCHITECTURE.md` · `DATA_MODEL.md` · `TEMPLATE_SELECTION.md` · `VARIABLE_SEGMENTATION.md` (bài toán lõi) · `TPB_VARIABLES.md` (biến $ND online) · `DIFY_WORKFLOW.md` · `API_CONTRACT.md` · `DRIVE_STRUCTURE.md` · `DOCX_GENERATOR.md`. UI: `DESIGN_SYSTEM.md`. Nguồn tham khảo: `Tham khao/` (Logic hiển thị.xlsx + 96 mẫu offline + `B8ZB/` 221 mẫu online). Brief gốc: `Prompt mo dau.MD` / `Tổng quan.MD` (repo root).

@@ -1,60 +1,47 @@
-# Design System — Smart Guarantee (kế thừa từ SHTD "TPBank BIZ")
+# DESIGN SYSTEM — Smart Guarantee
 
-> **Nguồn tham chiếu:** dự án **PRJ-SHTD** — `D:\Workspace\Production\SHTD-Dashboard\AI_CONTEXT\` (`DESIGN_SYSTEM.md`, `UIUX_SYSTEM.md`, `RESPONSIVE_GUIDE.md`, `THEME_ARCHITECTURE.md`). Smart Guarantee **dùng lại nguyên** ngôn ngữ thị giác này để đồng bộ trải nghiệm; file này là bản tóm + cách áp dụng. Khi cần chi tiết component, mở docs SHTD.
+> **Hướng đã chốt (phiên 1):** giữ **nhận diện "TPBank BIZ"** (tím-first, bo tròn mềm, bóng tối thiểu) nhưng **bỏ enterprise dashboard/sidebar**. UI là **trang 5-tab tuyến tính trên Bootstrap** — ưu tiên *ra demo nhanh*. Nguồn nhận diện: PRJ-SHTD (`D:\Workspace\Production\SHTD-Dashboard`).
 
-## 1. Design Identity — "TPBank BIZ"
-- **Tím-first**: mọi phần tử tương tác mặc định tím thương hiệu `#7B2CBF`; loại xanh dương khỏi palette chính.
-- **Enterprise dashboard**: sidebar cố định + topbar + vùng nội dung card-driven.
-- **Ít nhiễu thị giác**: không animation nặng, không đổ bóng đậm, không gradient trên nội dung. Ưu tiên **đọc dữ liệu**.
+## 1. Nhận diện — "TPBank BIZ" (giữ lại)
+- **Tím-first:** phần tử tương tác mặc định tím thương hiệu `#7B2CBF`; không xanh dương làm màu chính.
+- **Mềm & bo tròn:** card `20px`, input/button `12px`, badge/pill `9999px`.
+- **Bóng tối thiểu:** duy nhất `0 2px 10px rgba(0,0,0,0.03)`.
+- **Ít nhiễu:** không gradient trên nội dung, không animation nặng — ưu tiên đọc dữ liệu.
 
-## 2. Nguyên tắc cốt lõi
-1. **Tím-first** — interactive = tím `#7B2CBF`.
-2. **Thoáng, không dày đặc** — card padding 24–32px, section gap 24px.
-3. **Mềm & bo tròn** — card `border-radius: 20px`; input/button `12px`; badge/pill `9999px`.
-4. **Bóng tối thiểu** — duy nhất `0 2px 10px rgba(0,0,0,0.03)`.
-5. **Workflow-first** — wizard stepper + form sections + luồng phê duyệt là trung tâm UX. (Rất hợp luồng bảo lãnh: khởi tạo → duyệt → phát hành.)
+## 2. Bỏ so với SHTD (cho nhanh)
+- ❌ Sidebar cố định / off-canvas · ❌ topbar dashboard phức tạp · ❌ wizard stepper nặng → thay bằng **Bootstrap nav-tabs / stepper nhẹ**.
+- ✅ Layout: **topbar tím mảnh + vùng nội dung card-driven**, flow tuyến tính 5 bước.
 
-## 3. Token nền (khởi điểm — điều chỉnh trong `variables.css`)
-| Token | Giá trị | Ghi chú |
-|---|---|---|
-| `--color-primary` | `#7B2CBF` | Tím thương hiệu |
-| `--radius-card` | `20px` | Thẻ |
-| `--radius-control` | `12px` | Input/Button |
-| `--radius-pill` | `9999px` | Badge/Pill |
-| `--shadow-card` | `0 2px 10px rgba(0,0,0,0.03)` | Bóng duy nhất |
-| `--space-card` | `24–32px` | Padding thẻ |
-| `--sidebar-w` | `252px` (1440) · `240px` (1280) | Bề rộng sidebar |
-
-> ⚠️ SHTD chưa có file `DESIGN_TOKENS.md` riêng — token nằm trong `assets/css/variables.css`. Khi dựng FE, **copy `variables.css` từ SHTD làm điểm xuất phát** rồi tinh chỉnh cho Smart Guarantee.
-
-## 4. Kiến trúc CSS (theo SHTD)
+## 3. Layout mục tiêu (5-tab)
 ```
-assets/css/
-├── variables.css   ← TẤT CẢ token (SỬA Ở ĐÂY TRƯỚC) — LOAD ĐẦU TIÊN
-├── base.css        ← reset, html/body, focus
-├── typography.css  ├── layout.css (shell: sidebar/topbar/main)
-├── components.css  ├── forms.css   ├── wizard.css (stepper — dùng cho luồng bảo lãnh)
-├── dashboard.css   ├── portal.css  ├── login.css  ├── states.css
-└── responsive.css  ← breakpoints
+┌──────────────────────────────────────────┐
+│  ▌ TPBank · Smart Guarantee   (topbar tím)│
+├──────────────────────────────────────────┤
+│ ①Upload  ②Phân loại  ③Dữ liệu  ④Biến TPB  ⑤Xuất │  ← nav-tabs / step
+├──────────────────────────────────────────┤
+│  card (radius 20, shadow tối thiểu)        │
+│  nội dung theo tab hiện hành               │
+└──────────────────────────────────────────┘
 ```
-**Thứ tự load quan trọng:** `variables.css` luôn đầu tiên.
+- **Tab 1 Upload** — dropzone PDF. **Tab 2 Classification** — badge 4 tầng (loại/ngôn ngữ/loại thư/bộ mẫu). **Tab 3 Extracted** — bảng field edit được, **highlight confidence thấp** (vàng/đỏ). **Tab 4 Variables** — bảng `NDxxx → giá trị`. **Tab 5 Generate** — nút Generate + Download DOCX.
 
-## 5. Layout shell
-Sidebar (252px, gradient tím, cố định) + Topbar + `app-content` card-driven. Cấu trúc markup sidebar/topbar: xem `SHTD-Dashboard/AI_CONTEXT/DESIGN_SYSTEM.md` mục Component Reference.
-
-## 6. Responsive — Desktop-first
-Base 1440px, media query đơn giản hoá dần:
-
-| Breakpoint | Thay đổi chính |
+## 4. Token nền (khởi điểm)
+| Token | Giá trị |
 |---|---|
-| 1440px+ | Full, sidebar 252px |
-| 1280px | Sidebar 240px, content padding 24px |
-| **1024px** | **Sidebar off-canvas** (`translateX(-100%)`) + nút toggle + overlay |
-| 768px | KPI 2 cột, topbar gọn |
-| 480px | KPI 1 cột, form full-width, bottom nav |
+| `--color-primary` | `#7B2CBF` |
+| `--radius-card` | `20px` |
+| `--radius-control` | `12px` |
+| `--radius-pill` | `9999px` |
+| `--shadow-card` | `0 2px 10px rgba(0,0,0,0.03)` |
+| `--space-card` | `24–32px` |
+| `--confidence-low` | vàng cảnh báo / đỏ (highlight field) |
 
-## 7. Cách áp dụng cho Smart Guarantee
-1. Copy `assets/css/` (đặc biệt `variables.css`) từ SHTD làm nền → tinh chỉnh token nếu cần.
-2. Dùng lại **shell** (sidebar/topbar) + **wizard stepper** cho luồng phát hành bảo lãnh.
-3. Giữ 5 nguyên tắc; không thêm bóng/gradient/animation ngoài chuẩn.
-4. Bám breakpoint 1440/1280/1024/768/480; kiểm off-canvas sidebar tại 1024.
+## 5. Cách dựng (Bootstrap)
+1. Bootstrap 5 (CDN) làm nền lưới/component.
+2. 1 file `assets/css/theme.css` **override** biến Bootstrap → áp token TPBank (primary tím, radius, shadow).
+   - **Nguồn tham chiếu token SHTD:** file thật là `D:\Workspace\Production\SHTD-Dashboard\assets\css\tokens.css` *(không phải `variables.css` — file đó không tồn tại trên đĩa; đây là đính chính so với bản khởi tạo).* Lấy giá trị màu/radius làm điểm xuất phát, **không copy nguyên cây CSS SHTD** (SHTD là dashboard, ta chỉ cần nhận diện).
+3. `nav-tabs` Bootstrap cho 5 bước; badge cho phân loại; `table` cho field/variable.
+4. Giữ 4 nguyên tắc nhận diện; không thêm bóng/gradient/animation ngoài chuẩn.
+
+## 6. Responsive (nhẹ)
+Bootstrap grid mặc định. Desktop-first, gọn dần ở `768px` (tab cuộn ngang / stack). Không cần off-canvas sidebar (đã bỏ sidebar).
