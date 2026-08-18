@@ -21,7 +21,9 @@ var SG = {
   },
   bool: function (key) { return String(this.prop(key, 'false')).toLowerCase() === 'true'; },
 
-  difyBaseUrl: function () { return this.prop('DIFY_BASE_URL').replace(/\/+$/, ''); },
+  // Chuẩn hoá: bỏ '/' cuối và '/v1' cuối (Dify.gs sẽ nối '/v1/workflows/run').
+  // Chấp nhận cả 'https://api.dify.ai' lẫn 'https://api.dify.ai/v1'.
+  difyBaseUrl: function () { return this.prop('DIFY_BASE_URL').replace(/\/+$/, '').replace(/\/v1$/, ''); },
   difyKey: function () { return this.prop('DIFY_API_KEY'); },
   difyStub: function () { return this.bool('DIFY_STUB'); },
   driveRootId: function () { return this.prop('DRIVE_ROOT_ID'); },
