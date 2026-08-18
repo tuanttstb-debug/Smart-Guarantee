@@ -1,5 +1,15 @@
 # SESSION HANDOVER — Smart Guarantee
 
+## ⭐ Tổng kết phiên 2026-08-18 #8 (Claude Code) — Dify DSL import-ready
+- **Task completed:** [TT] chọn hướng "Dify DSL import-ready". Tạo **`dify/smart-guarantee.workflow.yml`** — DSL Dify (mode workflow) dựng sẵn **8 node** (start→classify(LLM)→route(code)→segment(LLM)→extract(LLM)→validate(LLM)→assemble(code)→end) + 7 edge linear + prompt/JSON-schema từ spec. LLM trả JSON-text; code node strip ```json fences rồi parse; assemble xuất 5 khoá khớp `API_CONTRACT`/`Dify.gs`. **YAML valid** (js-yaml: 8 node/7 edge). Thêm mục "Import nhanh" vào `WORKFLOW_SPEC.md`.
+- **Files changed:** *(chưa commit khi ghi)* mới `dify/smart-guarantee.workflow.yml`; sửa `dify/WORKFLOW_SPEC.md`; cập nhật `AI_CONTEXT/{TODO_NEXT,SESSION_HANDOVER}.md`.
+- **Decision:** (1) LLM node xuất **text (JSON string)** + code node parse (không phụ thuộc feature structured-output theo version Dify) → bền hơn khi import. (2) Model để **`openai/gpt-4o` placeholder** — [TT] đổi sang provider đã cấu hình sau import. (3) DSL là đường nhanh; `WORKFLOW_SPEC.md` là fallback dựng tay nếu schema Dify lệch.
+- **Blocker:** [TT] *Import DSL* → đổi model → publish → đặt `DIFY_BASE_URL`/`DIFY_API_KEY` → xoá `DIFY_STUB`. Rủi ro: format DSL theo version Dify → có thể cần chỉnh nhẹ khi import (đã ghi trong file + spec).
+- **Next step:** [TT] import + publish Dify → chạy `docs/UAT.md`. [CC] theo kết quả: fix `$ND` OOXML nếu cần; tinh chỉnh prompt/schema; (backlog) Admin UI config-driven / Expansion blueprint.
+- **Regression risk:** không — chỉ thêm file DSL + doc; không đụng code runtime.
+
+---
+
 ## ⭐ Tổng kết phiên 2026-08-18 #7 (Claude Code) — 4 file GAS live + root README + UAT runbook
 - **Task completed:** [TT] re-paste 4 file GAS (`Generate/Process/Dify/SheetConfig.gs`) — **live**, URL không đổi. [CC]: (1) root **`README.md`** — kiến trúc, cấu trúc repo, **bảng trạng thái** (FE/GAS/generator/Sheet/Drive ✅, Dify ⏳), how-to-run, data-boundary. (2) **`docs/UAT.md`** — runbook Phase 4: tiền đề, 6 ca test T1–T6 (phủ OFFLINE/ONLINE_B8ZB/KH_UPLOAD), quy trình test qua FE, bảng đo 6 KPI, cách tinh chỉnh qua Sheet (không sửa code), rủi ro theo dõi (đặc biệt `$ND` field-code).
 - **Files changed:** *(chưa commit khi ghi)* mới `README.md`, `docs/UAT.md`; cập nhật `AI_CONTEXT/{TODO_NEXT,SESSION_HANDOVER}.md`.

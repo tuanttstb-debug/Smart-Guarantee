@@ -1,0 +1,331 @@
+# Smart Guarantee — Dify Workflow DSL (import-ready)
+# Import: Dify Studio ▸ Import DSL ▸ upload file này. Sau import:
+#   1) Đổi model mỗi node LLM sang provider đã cấu hình trong Dify của bạn
+#      (Qwen/Gemini/GPT-4o/DeepSeek) — hiện để openai/gpt-4o làm placeholder.
+#   2) Publish ▸ lấy API key (app-...) + Base URL → GAS Script Properties
+#      DIFY_BASE_URL / DIFY_API_KEY, xoá DIFY_STUB.
+# Chi tiết node + prompt: dify/WORKFLOW_SPEC.md. Nếu bản Dify khác schema và
+# import lỗi → dựng tay theo WORKFLOW_SPEC.md (fallback).
+#
+# Luồng: start → classify → route(code) → segment → extract → validate → assemble(code) → end
+# Mỗi LLM trả JSON dạng text; code node strip ```json fences rồi parse.
+app:
+  description: "PoC TPBank — classify/segment/extract/map/validate thư bảo lãnh."
+  icon: "🛡️"
+  icon_background: "#7B2CBF"
+  mode: workflow
+  name: "Smart Guarantee"
+kind: app
+version: 0.1.5
+workflow:
+  environment_variables: []
+  features:
+    file_upload:
+      image:
+        enabled: false
+    opening_statement: ""
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+      - id: e-start-classify
+        source: start
+        target: classify
+        sourceHandle: source
+        targetHandle: target
+        type: custom
+        data: { sourceType: start, targetType: llm, isInIteration: false }
+      - id: e-classify-route
+        source: classify
+        target: route
+        sourceHandle: source
+        targetHandle: target
+        type: custom
+        data: { sourceType: llm, targetType: code, isInIteration: false }
+      - id: e-route-segment
+        source: route
+        target: segment
+        sourceHandle: source
+        targetHandle: target
+        type: custom
+        data: { sourceType: code, targetType: llm, isInIteration: false }
+      - id: e-segment-extract
+        source: segment
+        target: extract
+        sourceHandle: source
+        targetHandle: target
+        type: custom
+        data: { sourceType: llm, targetType: llm, isInIteration: false }
+      - id: e-extract-validate
+        source: extract
+        target: validate
+        sourceHandle: source
+        targetHandle: target
+        type: custom
+        data: { sourceType: llm, targetType: llm, isInIteration: false }
+      - id: e-validate-assemble
+        source: validate
+        target: assemble
+        sourceHandle: source
+        targetHandle: target
+        type: custom
+        data: { sourceType: llm, targetType: code, isInIteration: false }
+      - id: e-assemble-end
+        source: assemble
+        target: end
+        sourceHandle: source
+        targetHandle: target
+        type: custom
+        data: { sourceType: code, targetType: end, isInIteration: false }
+    nodes:
+      - id: start
+        type: custom
+        position: { x: 40, y: 300 }
+        data:
+          type: start
+          title: "Start"
+          desc: "Inputs từ GAS gateway"
+          variables:
+            - variable: raw_text
+              label: raw_text
+              type: paragraph
+              required: true
+              max_length: 48000
+            - variable: paragraphs_json
+              label: paragraphs_json
+              type: paragraph
+              required: false
+              max_length: 48000
+            - variable: config_json
+              label: config_json
+              type: paragraph
+              required: false
+              max_length: 48000
+      - id: classify
+        type: custom
+        position: { x: 320, y: 300 }
+        data:
+          type: llm
+          title: "LLM1 Classify"
+          model:
+            provider: openai
+            name: gpt-4o
+            mode: chat
+            completion_params:
+              temperature: 0
+          context:
+            enabled: false
+            variable_selector: []
+          vision:
+            enabled: false
+          prompt_template:
+            - role: system
+              text: |
+                Bạn là chuyên gia nghiệp vụ bảo lãnh ngân hàng TPBank. Phân loại thư bảo lãnh theo các chiều.
+                Chỉ trả JSON đúng schema (không markdown, không giải thích). Mã hợp lệ:
+                guarantee_type ∈ [BLDT,BLBH,BLTH,BLTU,BLTT,BLKH]; method ∈ [TG,ĐT,SW]; language ∈ [TV,TA,SN,KH]
+                template_type ∈ [TPB,T22,T07,T40,EVN,VIT,MK]; currency ∈ [VND,NGT]
+                Nếu guarantee_type=BLDT thêm circular ∈ [TT06-07,TT22,TT40,TT79] và envelope. Trường không xác định để "".
+                Schema: {"currency","guarantee_type","method","language","template_type","sector","validity_type","joint_venture","contract_status","circular","envelope"}
+            - role: user
+              text: |
+                Nội dung thư:
+                {{#start.raw_text#}}
+      - id: route
+        type: custom
+        position: { x: 600, y: 300 }
+        data:
+          type: code
+          title: "Route (deterministic)"
+          code_language: python3
+          variables:
+            - variable: classification_text
+              value_selector: [classify, text]
+            - variable: config_json
+              value_selector: [start, config_json]
+          code: |
+            import json
+            def _parse(s):
+                s = (s or "").strip()
+                if s.startswith("```"):
+                    s = s.strip("`")
+                    i = s.find("{")
+                    s = s[i:] if i >= 0 else s
+                return json.loads(s)
+            def main(classification_text: str, config_json: str) -> dict:
+                try: c = _parse(classification_text)
+                except Exception: c = {}
+                cur = c.get("currency",""); mth = c.get("method",""); lang = c.get("language","")
+                tt = c.get("template_type",""); gt = c.get("guarantee_type","")
+                route = "KH_UPLOAD"
+                if cur == "VND" and lang == "TV":
+                    if gt == "BLDT":
+                        route = "ONLINE_B8ZB"
+                    elif mth in ("TG","ĐT") and tt in ("TPB","T22","T07","T40","EVN","VIT"):
+                        route = "OFFLINE"
+                return {"route": route, "classification": json.dumps(c, ensure_ascii=False)}
+          outputs:
+            route: { type: string }
+            classification: { type: string }
+      - id: segment
+        type: custom
+        position: { x: 880, y: 300 }
+        data:
+          type: llm
+          title: "LLM2 Segment"
+          model:
+            provider: openai
+            name: gpt-4o
+            mode: chat
+            completion_params:
+              temperature: 0
+          context:
+            enabled: false
+            variable_selector: []
+          vision:
+            enabled: false
+          prompt_template:
+            - role: system
+              text: |
+                Phân đoạn thư bảo lãnh thành KHUNG (văn bản mẫu cố định) và BIEN (chỗ cần điền: tên, số tiền,
+                ngày, địa chỉ, tên gói thầu, số hợp đồng...). Giữ NGUYÊN VĂN và ĐẦY ĐỦ, đúng thứ tự.
+                Mỗi BIEN đoán field_guess theo canonical_fields trong config. Chỉ trả JSON (không markdown).
+                Schema: {"segments":[{"text","kind":"KHUNG"|"BIEN","field_guess","confidence":0-100}]}
+            - role: user
+              text: |
+                config: {{#start.config_json#}}
+                ---
+                thư:
+                {{#start.raw_text#}}
+      - id: extract
+        type: custom
+        position: { x: 1160, y: 300 }
+        data:
+          type: llm
+          title: "LLM3 Extract+Map"
+          model:
+            provider: openai
+            name: gpt-4o
+            mode: chat
+            completion_params:
+              temperature: 0
+          context:
+            enabled: false
+            variable_selector: []
+          vision:
+            enabled: false
+          prompt_template:
+            - role: system
+              text: |
+                Từ thư và danh sách BIEN, trích giá trị từng field áp dụng cho loại bảo lãnh (dùng field_requirements
+                theo guarantee_type). Chuẩn hoá tên field về canonical bằng field_aliases; chuẩn hoá số tiền và ngày
+                (dd/mm/yyyy). Map sang biến render theo route:
+                - route=ONLINE_B8ZB: key = $ND theo nd_variable_map.
+                - route=OFFLINE hoặc KH_UPLOAD: key = cụm [...] theo placeholder_map (chọn placeholder đại diện).
+                Mỗi biến kèm confidence 0-100. Chỉ trả JSON (không markdown).
+                Schema: {"variables":{"<key>":{"value","confidence"}}}
+            - role: user
+              text: |
+                route: {{#route.route#}}
+                classification: {{#route.classification#}}
+                config: {{#start.config_json#}}
+                segments: {{#segment.text#}}
+                thư: {{#start.raw_text#}}
+      - id: validate
+        type: custom
+        position: { x: 1440, y: 300 }
+        data:
+          type: llm
+          title: "LLM4 Validate"
+          model:
+            provider: openai
+            name: gpt-4o
+            mode: chat
+            completion_params:
+              temperature: 0
+          context:
+            enabled: false
+            variable_selector: []
+          vision:
+            enabled: false
+          prompt_template:
+            - role: system
+              text: |
+                Kiểm tra: field bắt buộc còn thiếu (field_requirements theo guarantee_type), số tiền bằng số vs bằng
+                chữ, ngày hợp lệ, hiệu lực hợp lý. Chỉ trả JSON (không markdown).
+                Schema: {"missing":["field_code"],"warnings":["mô tả ngắn"]}
+            - role: user
+              text: |
+                config: {{#start.config_json#}}
+                classification: {{#route.classification#}}
+                variables: {{#extract.text#}}
+      - id: assemble
+        type: custom
+        position: { x: 1720, y: 300 }
+        data:
+          type: code
+          title: "Assemble output"
+          code_language: python3
+          variables:
+            - variable: classification
+              value_selector: [route, classification]
+            - variable: route_val
+              value_selector: [route, route]
+            - variable: segments
+              value_selector: [segment, text]
+            - variable: variables
+              value_selector: [extract, text]
+            - variable: validation
+              value_selector: [validate, text]
+          code: |
+            import json
+            def _parse(s, default):
+                s = (s or "").strip()
+                if s.startswith("```"):
+                    s = s.strip("`")
+                    i = s.find("{")
+                    s = s[i:] if i >= 0 else s
+                try: return json.loads(s)
+                except Exception: return default
+            def main(classification: str, route_val: str, segments: str, variables: str, validation: str) -> dict:
+                seg = _parse(segments, {}).get("segments", [])
+                for s in seg:
+                    if s.get("kind") == "BIEN" and "field_guess" in s:
+                        s["field"] = s.pop("field_guess")
+                return {
+                    "classification": _parse(classification, {}),
+                    "route": route_val or "KH_UPLOAD",
+                    "segments": seg,
+                    "variables": _parse(variables, {}).get("variables", {}),
+                    "validation": _parse(validation, {"missing": [], "warnings": []}),
+                }
+          outputs:
+            classification: { type: object }
+            route: { type: string }
+            segments: { type: "array[object]" }
+            variables: { type: object }
+            validation: { type: object }
+      - id: end
+        type: custom
+        position: { x: 2000, y: 300 }
+        data:
+          type: end
+          title: "End"
+          outputs:
+            - variable: classification
+              value_selector: [assemble, classification]
+            - variable: route
+              value_selector: [assemble, route]
+            - variable: segments
+              value_selector: [assemble, segments]
+            - variable: variables
+              value_selector: [assemble, variables]
+            - variable: validation
+              value_selector: [assemble, validation]

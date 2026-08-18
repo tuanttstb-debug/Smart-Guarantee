@@ -22,7 +22,7 @@
 7. ✅/⏳ [CC] **Extract Text + nối GAS→Dify (blocking)** — GAS phía đã xong: `Text.gs` bóc text (Drive OCR) → `Dify.gs` gọi `/v1/workflows/run` blocking, chuẩn hoá output theo `API_CONTRACT`. **Còn [TT]:** deploy Web App lấy URL + dựng **Dify Workflow** thật (Step 1–8) rồi tắt stub. *(Điểm swap nếu để Dify tự bóc text: `Text.gs`+`Dify.gs` — xem `gas/README.md`.)*
 
 ## Phase 2 — Classification + Segmentation + Mapping
-> ✅ [CC] **Spec + wiring xong** (2026-08-18): `dify/WORKFLOW_SPEC.md` (6 node paste-ready: Classify→Route→Segment→Extract+Map→Validate→Assemble, prompt + JSON schema từng node) + `gas/SheetConfig.gs` (đọc Sheet) + `Dify.gs` truyền `config_json`. **Còn [TT]:** dựng workflow trong Dify UI theo spec → publish → `DIFY_BASE_URL`/`DIFY_API_KEY` → xoá `DIFY_STUB`; re-paste 3 file GAS.
+> ✅ [CC] **Spec + DSL + wiring xong** (2026-08-18): **`dify/smart-guarantee.workflow.yml`** (DSL import-ready, 8 node, YAML valid) + `dify/WORKFLOW_SPEC.md` (spec/fallback) + `gas/SheetConfig.gs` + `Dify.gs` truyền `config_json`. **Còn [TT]:** *Import DSL* vào Dify → đổi model provider → publish → `DIFY_BASE_URL`/`DIFY_API_KEY` → xoá `DIFY_STUB`.
 8. ⏳ [TT] **Dựng Dify** node Classify + Route (spec §LLM1/§Code Route).
 9. ⏳ [TT] node **Segment** (spec §LLM2) — *node lõi*.
 10. ⏳ [TT] node **Extract+Normalize+Map** (spec §LLM3, dùng field_aliases/placeholder_map/nd_variable_map từ config_json).

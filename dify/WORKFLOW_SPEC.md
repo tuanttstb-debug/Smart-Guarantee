@@ -1,5 +1,7 @@
 # Dify Workflow — Build Spec (Smart Guarantee)
 
+> ⚡ **Import nhanh:** dùng [`smart-guarantee.workflow.yml`](smart-guarantee.workflow.yml) — Dify Studio ▸ *Import DSL* ▸ upload → dựng sẵn 8 node (start→classify→route→segment→extract→validate→assemble→end). Sau import: đổi **model** mỗi node LLM sang provider đã cấu hình (đang để `openai/gpt-4o` placeholder); Publish → lấy API key. Doc này là **spec chi tiết / fallback dựng tay** nếu bản Dify khác schema.
+>
 > Bản dựng cụ thể cho **Dify Workflow** (không phải chat agent). Thiết kế khái niệm: `../AI_CONTEXT/DIFY_WORKFLOW.md`. Mọi node LLM **bật Structured Output / JSON**. GAS gọi `/v1/workflows/run` blocking và nhận 5 khoá output (`Dify.gs`).
 >
 > **Nguồn config:** GAS đọc Google Sheet và truyền vào workflow qua input `config_json` (Dify KHÔNG tự đọc Sheet). LLM tham chiếu `config_json` để normalize/map.
