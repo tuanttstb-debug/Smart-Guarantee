@@ -1,16 +1,15 @@
-# Smart Guarantee — Dify Workflow DSL (import-ready)
-# Import: Dify Studio ▸ Import DSL ▸ upload file này. Sau import:
-#   1) Đổi model mỗi node LLM sang provider đã cấu hình trong Dify của bạn
-#      (Qwen/Gemini/GPT-4o/DeepSeek) — hiện để openai/gpt-4o làm placeholder.
-#   2) Publish ▸ lấy API key (app-...) + Base URL → GAS Script Properties
-#      DIFY_BASE_URL / DIFY_API_KEY, xoá DIFY_STUB.
-# Chi tiết node + prompt: dify/WORKFLOW_SPEC.md. Nếu bản Dify khác schema và
-# import lỗi → dựng tay theo WORKFLOW_SPEC.md (fallback).
+# Smart Guarantee — Dify Workflow DSL (import-ready, LLM-only)
+# Import: Dify Studio ▸ Import DSL ▸ upload. Sau import:
+#   1) Đổi model mỗi node LLM sang provider đã cấu hình (đang để openai/gpt-4o placeholder).
+#   2) Publish ▸ lấy API key + Base URL → GAS Script Properties DIFY_BASE_URL / DIFY_API_KEY,
+#      xoá DIFY_STUB. (DIFY_BASE_URL = host gốc, vd https://api.dify.ai)
 #
-# Luồng: start → classify → route(code) → segment → extract → validate → assemble(code) → end
-# Mỗi LLM trả JSON dạng text; code node strip ```json fences rồi parse.
+# ⚠️ KHÔNG dùng Code node (tránh sandbox 429 của Dify Cloud). Chỉ 4 LLM node.
+# GAS (Dify.gs::normalizeDify_) tự suy ROUTE + parse JSON + assemble → API_CONTRACT.
+# Luồng: start → classify → segment → extract → validate → end
+# Mỗi LLM trả JSON (text). End xuất 4 output text: classification/segments/variables/validation.
 app:
-  description: "PoC TPBank — classify/segment/extract/map/validate thư bảo lãnh."
+  description: "PoC TPBank — classify/segment/extract/validate thư bảo lãnh (LLM-only)."
   icon: "🛡️"
   icon_background: "#7B2CBF"
   mode: workflow
@@ -42,20 +41,13 @@ workflow:
         targetHandle: target
         type: custom
         data: { sourceType: start, targetType: llm, isInIteration: false }
-      - id: e-classify-route
+      - id: e-classify-segment
         source: classify
-        target: route
-        sourceHandle: source
-        targetHandle: target
-        type: custom
-        data: { sourceType: llm, targetType: code, isInIteration: false }
-      - id: e-route-segment
-        source: route
         target: segment
         sourceHandle: source
         targetHandle: target
         type: custom
-        data: { sourceType: code, targetType: llm, isInIteration: false }
+        data: { sourceType: llm, targetType: llm, isInIteration: false }
       - id: e-segment-extract
         source: segment
         target: extract
@@ -70,20 +62,13 @@ workflow:
         targetHandle: target
         type: custom
         data: { sourceType: llm, targetType: llm, isInIteration: false }
-      - id: e-validate-assemble
+      - id: e-validate-end
         source: validate
-        target: assemble
-        sourceHandle: source
-        targetHandle: target
-        type: custom
-        data: { sourceType: llm, targetType: code, isInIteration: false }
-      - id: e-assemble-end
-        source: assemble
         target: end
         sourceHandle: source
         targetHandle: target
         type: custom
-        data: { sourceType: code, targetType: end, isInIteration: false }
+        data: { sourceType: llm, targetType: end, isInIteration: false }
     nodes:
       - id: start
         type: custom
@@ -110,7 +95,7 @@ workflow:
               max_length: 48000
       - id: classify
         type: custom
-        position: { x: 320, y: 300 }
+        position: { x: 340, y: 300 }
         data:
           type: llm
           title: "LLM1 Classify"
@@ -138,45 +123,9 @@ workflow:
               text: |
                 Nội dung thư:
                 {{#start.raw_text#}}
-      - id: route
-        type: custom
-        position: { x: 600, y: 300 }
-        data:
-          type: code
-          title: "Route (deterministic)"
-          code_language: python3
-          variables:
-            - variable: classification_text
-              value_selector: [classify, text]
-            - variable: config_json
-              value_selector: [start, config_json]
-          code: |
-            import json
-            def _parse(s):
-                s = (s or "").strip()
-                if s.startswith("```"):
-                    s = s.strip("`")
-                    i = s.find("{")
-                    s = s[i:] if i >= 0 else s
-                return json.loads(s)
-            def main(classification_text: str, config_json: str) -> dict:
-                try: c = _parse(classification_text)
-                except Exception: c = {}
-                cur = c.get("currency",""); mth = c.get("method",""); lang = c.get("language","")
-                tt = c.get("template_type",""); gt = c.get("guarantee_type","")
-                route = "KH_UPLOAD"
-                if cur == "VND" and lang == "TV":
-                    if gt == "BLDT":
-                        route = "ONLINE_B8ZB"
-                    elif mth in ("TG","ĐT") and tt in ("TPB","T22","T07","T40","EVN","VIT"):
-                        route = "OFFLINE"
-                return {"route": route, "classification": json.dumps(c, ensure_ascii=False)}
-          outputs:
-            route: { type: string }
-            classification: { type: string }
       - id: segment
         type: custom
-        position: { x: 880, y: 300 }
+        position: { x: 640, y: 300 }
         data:
           type: llm
           title: "LLM2 Segment"
@@ -206,7 +155,7 @@ workflow:
                 {{#start.raw_text#}}
       - id: extract
         type: custom
-        position: { x: 1160, y: 300 }
+        position: { x: 940, y: 300 }
         data:
           type: llm
           title: "LLM3 Extract+Map"
@@ -225,22 +174,21 @@ workflow:
             - role: system
               text: |
                 Từ thư và danh sách BIEN, trích giá trị từng field áp dụng cho loại bảo lãnh (dùng field_requirements
-                theo guarantee_type). Chuẩn hoá tên field về canonical bằng field_aliases; chuẩn hoá số tiền và ngày
-                (dd/mm/yyyy). Map sang biến render theo route:
-                - route=ONLINE_B8ZB: key = $ND theo nd_variable_map.
-                - route=OFFLINE hoặc KH_UPLOAD: key = cụm [...] theo placeholder_map (chọn placeholder đại diện).
+                trong config theo guarantee_type). Chuẩn hoá tên field về canonical bằng field_aliases; chuẩn hoá số
+                tiền và ngày (dd/mm/yyyy). Tự suy hệ biến từ classification:
+                - Nếu currency=VND & language=TV & guarantee_type=BLDT → dùng $ND (nd_variable_map): key = $NDxxx.
+                - Còn lại → dùng cụm [...] (placeholder_map): key = placeholder đại diện.
                 Mỗi biến kèm confidence 0-100. Chỉ trả JSON (không markdown).
                 Schema: {"variables":{"<key>":{"value","confidence"}}}
             - role: user
               text: |
-                route: {{#route.route#}}
-                classification: {{#route.classification#}}
+                classification: {{#classify.text#}}
                 config: {{#start.config_json#}}
                 segments: {{#segment.text#}}
                 thư: {{#start.raw_text#}}
       - id: validate
         type: custom
-        position: { x: 1440, y: 300 }
+        position: { x: 1240, y: 300 }
         data:
           type: llm
           title: "LLM4 Validate"
@@ -264,68 +212,20 @@ workflow:
             - role: user
               text: |
                 config: {{#start.config_json#}}
-                classification: {{#route.classification#}}
+                classification: {{#classify.text#}}
                 variables: {{#extract.text#}}
-      - id: assemble
+      - id: end
         type: custom
-        position: { x: 1720, y: 300 }
+        position: { x: 1540, y: 300 }
         data:
-          type: code
-          title: "Assemble output"
-          code_language: python3
-          variables:
+          type: end
+          title: "End"
+          outputs:
             - variable: classification
-              value_selector: [route, classification]
-            - variable: route_val
-              value_selector: [route, route]
+              value_selector: [classify, text]
             - variable: segments
               value_selector: [segment, text]
             - variable: variables
               value_selector: [extract, text]
             - variable: validation
               value_selector: [validate, text]
-          code: |
-            import json
-            def _parse(s, default):
-                s = (s or "").strip()
-                if s.startswith("```"):
-                    s = s.strip("`")
-                    i = s.find("{")
-                    s = s[i:] if i >= 0 else s
-                try: return json.loads(s)
-                except Exception: return default
-            def main(classification: str, route_val: str, segments: str, variables: str, validation: str) -> dict:
-                seg = _parse(segments, {}).get("segments", [])
-                for s in seg:
-                    if s.get("kind") == "BIEN" and "field_guess" in s:
-                        s["field"] = s.pop("field_guess")
-                return {
-                    "classification": _parse(classification, {}),
-                    "route": route_val or "KH_UPLOAD",
-                    "segments": seg,
-                    "variables": _parse(variables, {}).get("variables", {}),
-                    "validation": _parse(validation, {"missing": [], "warnings": []}),
-                }
-          outputs:
-            classification: { type: object }
-            route: { type: string }
-            segments: { type: "array[object]" }
-            variables: { type: object }
-            validation: { type: object }
-      - id: end
-        type: custom
-        position: { x: 2000, y: 300 }
-        data:
-          type: end
-          title: "End"
-          outputs:
-            - variable: classification
-              value_selector: [assemble, classification]
-            - variable: route
-              value_selector: [assemble, route]
-            - variable: segments
-              value_selector: [assemble, segments]
-            - variable: variables
-              value_selector: [assemble, variables]
-            - variable: validation
-              value_selector: [assemble, validation]

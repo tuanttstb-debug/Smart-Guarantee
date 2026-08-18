@@ -1,6 +1,8 @@
 # Dify Workflow — Build Spec (Smart Guarantee)
 
-> ⚡ **Import nhanh:** dùng [`smart-guarantee.workflow.yml`](smart-guarantee.workflow.yml) — Dify Studio ▸ *Import DSL* ▸ upload → dựng sẵn 8 node (start→classify→route→segment→extract→validate→assemble→end). Sau import: đổi **model** mỗi node LLM sang provider đã cấu hình (đang để `openai/gpt-4o` placeholder); Publish → lấy API key. Doc này là **spec chi tiết / fallback dựng tay** nếu bản Dify khác schema.
+> ⚡ **Import nhanh:** dùng [`smart-guarantee.workflow.yml`](smart-guarantee.workflow.yml) — Dify Studio ▸ *Import DSL* ▸ upload. Sau import: đổi **model** mỗi node LLM sang provider đã cấu hình (đang để `openai/gpt-4o` placeholder); Publish → lấy API key.
+>
+> ⚠️ **Bản DSL hiện tại là LLM-only (6 node): start→classify→segment→extract→validate→end.** Đã **bỏ 2 code node** (Route, Assemble) vì Dify Cloud giới hạn sandbox code (lỗi 429). Việc suy **route** (deterministic) + parse JSON + gộp output nay do **GAS** làm (`Dify.gs::normalizeDify_` + `routeFromClassification_`). Extract tự suy hệ biến ($ND vs `[...]`) từ classification trong prompt. Các mục §Code Route / §LLM3 / §Code Assemble bên dưới là **spec tham chiếu / fallback** — logic route/assemble đã chuyển sang GAS.
 >
 > Bản dựng cụ thể cho **Dify Workflow** (không phải chat agent). Thiết kế khái niệm: `../AI_CONTEXT/DIFY_WORKFLOW.md`. Mọi node LLM **bật Structured Output / JSON**. GAS gọi `/v1/workflows/run` blocking và nhận 5 khoá output (`Dify.gs`).
 >

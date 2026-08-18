@@ -55,14 +55,58 @@ function callDify_(docId, extracted) {
   return normalizeDify_(outputs);
 }
 
-/** Chuẩn hoá về đúng shape API_CONTRACT (đủ khoá, không undefined). */
+/**
+ * Chuẩn hoá về shape API_CONTRACT. Workflow (không dùng code node — tránh
+ * sandbox 429) trả 4 output text: classification/segments/variables/validation.
+ * GAS parse JSON + **tự suy route** (deterministic) + map field. Vẫn nhận được
+ * dạng object (nếu Dify trả đã parse) hoặc field 'route' có sẵn.
+ */
 function normalizeDify_(o) {
   o = o || {};
+  var classification = parseMaybe_(o.classification, {});
+  var segObj = parseMaybe_(o.segments, {});
+  var segments = Array.isArray(segObj) ? segObj : (segObj.segments || []);
+  segments.forEach(function (s) {
+    if (s && s.kind === 'BIEN' && s.field_guess && !s.field) { s.field = s.field_guess; delete s.field_guess; }
+  });
+  var varObj = parseMaybe_(o.variables, {});
+  var variables = varObj.variables || (isPlainVarMap_(varObj) ? varObj : {});
+  var validation = parseMaybe_(o.validation, { missing: [], warnings: [] });
+
   return {
-    classification: o.classification || {},
-    route: o.route || 'KH_UPLOAD',
-    segments: o.segments || [],
-    variables: o.variables || {},
-    validation: o.validation || { missing: [], warnings: [] },
+    classification: classification,
+    route: o.route || routeFromClassification_(classification),
+    segments: segments,
+    variables: variables,
+    validation: { missing: validation.missing || [], warnings: validation.warnings || [] },
   };
+}
+
+/** Suy route deterministic từ classification (TEMPLATE_SELECTION §2). */
+function routeFromClassification_(c) {
+  c = c || {};
+  var cur = c.currency || '', mth = c.method || '', lang = c.language || '';
+  var tt = c.template_type || '', gt = c.guarantee_type || '';
+  if (cur === 'VND' && lang === 'TV') {
+    if (gt === 'BLDT') return 'ONLINE_B8ZB';
+    if ((mth === 'TG' || mth === 'ĐT') && ['TPB', 'T22', 'T07', 'T40', 'EVN', 'VIT'].indexOf(tt) >= 0) return 'OFFLINE';
+  }
+  return 'KH_UPLOAD';
+}
+
+/** Parse JSON text (strip ```fences); nếu đã là object thì trả nguyên. */
+function parseMaybe_(v, dflt) {
+  if (v && typeof v === 'object') return v;
+  if (typeof v !== 'string' || !v.trim()) return dflt;
+  var s = v.trim();
+  if (s.indexOf('```') === 0) { s = s.replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, ''); }
+  var i = s.indexOf('{'), j = s.lastIndexOf('}');
+  if (i > 0 && j > i) s = s.slice(i, j + 1);
+  try { return JSON.parse(s); } catch (_) { return dflt; }
+}
+
+/** variables dạng { "[...]": {value,confidence} } (không bọc trong .variables). */
+function isPlainVarMap_(o) {
+  var ks = Object.keys(o || {});
+  return ks.length > 0 && ks.every(function (k) { return o[k] && typeof o[k] === 'object' && 'value' in o[k]; });
 }
