@@ -12,9 +12,11 @@
 
   async function post(action, body) {
     const url = cfg.GAS_WEB_APP_URL + '?action=' + action;
+    // text/plain = "simple request" → không kích CORS preflight (GAS Web App
+    // không trả header cho OPTIONS). GAS đọc body qua e.postData.contents.
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);

@@ -2,7 +2,9 @@
 
 Ưu tiên trên xuống. Owner: [CC]=Claude Code · [TT]=Tuân. Roadmap demo **5–7 ngày**, 4 phase.
 
-> **Delta (2026-08-18 — FE scaffold):** Phase 1 #5 XONG (Bootstrap 5-tab, chạy demo bằng mock). **Việc kế tiếp** = (a) [CC] Phase 0 #3–4 (auto-build REGISTRY/ND_MAP/PLACEHOLDER_MAP + Sheet + Drive) và/hoặc (b) [CC] Phase 1 #6–7 (GAS gateway `action=upload|process` + nối Dify) rồi bật `USE_MOCK=false`. Chờ [TT]: rule validity 1–5, bộ test, deploy GAS Web App lấy URL.
+> **Delta (2026-08-18 #2 — GAS gateway):** Phase 1 #6–7 XONG phía GAS (`gas/`: upload/process/generate/config + Dify blocking + Drive + OCR). **Việc kế tiếp** = [TT] deploy Web App → dán URL vào `config.js` + `USE_MOCK=false`; dựng Dify Workflow thật (Step 1–8) rồi tắt `DIFY_STUB`. Song song [CC] có thể làm Phase 0 #3–4 (REGISTRY/Sheet/Drive) để Dify có config đọc.
+
+> **Delta (2026-08-18 — FE scaffold):** Phase 1 #5 XONG (Bootstrap 5-tab, chạy demo bằng mock). Chờ [TT]: rule validity 1–5, bộ test, deploy GAS Web App lấy URL.
 
 > **Delta (2026-08-17 — kết phiên):** context thiết kế đã đủ (gồm B8ZB + 2 hệ biến); remote đã tạo & push. Phase 0 mục 3–4 (auto-build REGISTRY/ND_MAP/PLACEHOLDER_MAP + Sheet + Drive). Chờ [TT]: rule validity 1–5, bộ test.
 
@@ -14,8 +16,8 @@
 
 ## Phase 1 — MVP Upload + Extract
 5. ✅ [CC] **FE scaffold** Bootstrap 5-tab — DONE (2026-08-18): `index.html` + `assets/{css/theme.css, js/config.js|mock.js|api.js|app.js}`. Topbar tím + 5 nav-tabs step-gated; tab Upload (drag&drop, validate ext/size), classification 9 chiều + route, bảng field edit + highlight confidence <80%, segmentation khung/biến (cập nhật realtime khi edit), Generate + Download. Lớp `api.js` gọi GAS theo `API_CONTRACT.md`, **fallback `mock.js`** (cùng shape) để demo khi chưa có backend. Cấu hình 1 chỗ: `config.js` (`GAS_WEB_APP_URL` + `USE_MOCK`). JS `node --check` OK. *(Verify Chrome: chưa chạy được — extension chưa kết nối; đã mở bằng trình duyệt mặc định để [TT] xem.)*
-6. [CC] **GAS gateway**: `action=upload` (lưu /INPUT), khung `action=process`. Xem `API_CONTRACT.md`.
-7. [CC] **Dify** Step 1–2 Extract Text (pdfplumber/PyPDF) → `{raw_text, paragraphs}`; nối GAS→Dify (blocking).
+6. ✅ [CC] **GAS gateway** — DONE (2026-08-18): `gas/` (8 `.gs` + `appsscript.json` + README). Router `?action=upload|process|generate|config|ping`; `upload`→`/INPUT/<doc_id>`; `process` khung đầy đủ (bóc text → Dify → lưu `/EXTRACTED` → trả FE); `generate` PoC (dựng lại từ segments → `.docx` thật ở `/OUTPUT`; bản đầy đủ = #13). Secret ở Script Properties. `DIFY_STUB=true` test GAS↔FE không cần Dify. FE POST `text/plain` (né CORS preflight).
+7. ✅/⏳ [CC] **Extract Text + nối GAS→Dify (blocking)** — GAS phía đã xong: `Text.gs` bóc text (Drive OCR) → `Dify.gs` gọi `/v1/workflows/run` blocking, chuẩn hoá output theo `API_CONTRACT`. **Còn [TT]:** deploy Web App lấy URL + dựng **Dify Workflow** thật (Step 1–8) rồi tắt stub. *(Điểm swap nếu để Dify tự bóc text: `Text.gs`+`Dify.gs` — xem `gas/README.md`.)*
 
 ## Phase 2 — Classification + Segmentation + Mapping
 8. [CC] **Dify** Step 2 Classification (**9 chiều**, `TEMPLATE_SELECTION.md`) + route STANDARD/KH_UPLOAD — ép JSON Schema; prompt từ Sheet `PROMPTS`.

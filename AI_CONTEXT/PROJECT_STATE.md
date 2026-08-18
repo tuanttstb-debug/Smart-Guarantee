@@ -47,6 +47,9 @@
 - Segmentation sai ranh giới khung/biến (thư KH lệch corpus) → fuzzy match + user review (TD-SG-04).
 - Repo chưa có remote → chưa backup cloud.
 
+## Delta (2026-08-18 #2 — GAS gateway)
+**Backend gateway đầu tiên.** `gas/` — 8 `.gs` + `appsscript.json` + README. Router `?action=upload|process|generate|config|ping`; `upload`→`/INPUT`; `process` = bóc text (Drive OCR, `Text.gs`) → Dify `/v1/workflows/run` blocking (`Dify.gs`, chuẩn hoá output theo `API_CONTRACT`) → lưu `/EXTRACTED` → trả FE; `generate` PoC dựng lại từ `segments` → `.docx` thật ở `/OUTPUT`. Secret ở Script Properties; `DIFY_STUB` test không cần Dify. FE `api.js` chuyển POST `text/plain` (né CORS preflight). Syntax 8/8 OK; **chưa deploy** (cần [TT] tạo GAS project + Web App URL + Dify Workflow thật). Regression risk = không (code mới, chưa deploy).
+
 ## Delta (2026-08-18 — FE scaffold)
 **Có code đầu tiên.** FE scaffold Bootstrap 5-tab (Phase 1 #5): `index.html` + `assets/css/theme.css` + `assets/js/{config,mock,api,app}.js`. Luồng Upload→Phân loại→Dữ liệu→Biến&Khung→Xuất chạy được **bằng mock** (`mock.js` khớp `API_CONTRACT.md`); `api.js` gọi GAS thật khi `USE_MOCK=false` + có URL. Nhận diện tím `#7B2CBF`, edit field + highlight confidence <80%, segmentation realtime. Verify Chrome chưa chạy (extension chưa kết nối) → mở trình duyệt mặc định để [TT] xem. Chưa commit. Regression risk = không (file mới độc lập). Kế tiếp: GAS gateway (#6–7) hoặc Phase 0 (#3–4).
 

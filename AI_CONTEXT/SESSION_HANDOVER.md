@@ -1,5 +1,15 @@
 # SESSION HANDOVER — Smart Guarantee
 
+## ⭐ Tổng kết phiên 2026-08-18 #2 (Claude Code) — GAS gateway (Phase 1 #6–7)
+- **Task completed:** Dựng **GAS gateway** trong `gas/`: `appsscript.json` (bật Advanced Drive v2 + scope + Web App) và 8 `.gs` — `Code` (router `?action=` + parse body + JSON/error chuẩn), `Config` (Script Properties), `Drive` (cây thư mục + `doc_id` SG-YYYYMMDD-NNN + log metadata), `Upload` (`/INPUT/<id>`), `Text` (bóc text Drive OCR → `{raw_text,paragraphs}`), `Dify` (gọi `/v1/workflows/run` blocking, chuẩn hoá output theo contract), `Process` (`process`+`config`, có `DIFY_STUB`), `Generate` (PoC: dựng lại từ `segments` → `.docx` thật ở `/OUTPUT`). + `gas/README.md` (setup/deploy/test). Sửa FE `api.js` → POST `text/plain` (né CORS preflight GAS).
+- **Files changed:** *(repo SG, chưa commit)* mới `gas/{appsscript.json, Code, Config, Drive, Upload, Text, Dify, Process, Generate}.gs + README.md`; sửa `assets/js/api.js`; cập nhật `AI_CONTEXT/{TODO_NEXT,SESSION_HANDOVER,PROJECT_STATE}.md`.
+- **Decision:** (1) **Bóc text ở GAS** (Drive OCR) rồi gửi `raw_text` cho Dify — khớp `API_CONTRACT` (`inputs.raw_text`); điểm swap duy nhất `Text.gs`+`Dify.gs` nếu muốn để Dify tự bóc (pdfplumber). (2) **Secret ở Script Properties**, không hard-code. (3) `DIFY_STUB` để test GAS↔FE khi Dify chưa có. (4) FE↔GAS dùng `text/plain` + Web App access **Anyone** (ràng buộc CORS của GAS). (5) `Generate` bản tối giản để chạy end-to-end; templating đầy đủ = Phase 3 #13.
+- **Blocker:** **Chưa deploy** → chưa có Web App URL thật; **Dify Workflow chưa dựng** (Step 1–8). Verify runtime cần [TT] deploy + cấp quyền Google (không tự chạy được ở đây). Syntax 8/8 `.gs` `node --check` OK.
+- **Next step:** [TT] tạo GAS project (dán `gas/`) → Script Properties → Deploy Web App (Anyone) → dán URL vào `config.js` + `USE_MOCK=false`; test `?action=ping` rồi bật `DIFY_STUB=true` chạy FE end-to-end; dựng Dify Workflow → tắt stub. [CC] Phase 0 #3–4 (REGISTRY/Sheet/Drive) để Dify có config.
+- **Regression risk:** không — `gas/` là code mới độc lập chưa deploy; FE chỉ đổi content-type header (mock vẫn chạy như cũ).
+
+---
+
 ## ⭐ Tổng kết phiên 2026-08-18 (Claude Code) — FE scaffold Bootstrap 5-tab
 - **Task completed:** Dựng **FE scaffold** (Phase 1 #5) theo `DESIGN_SYSTEM.md`: `index.html` + `assets/css/theme.css` + `assets/js/{config,mock,api,app}.js`. 5-tab step-gated (mở khoá tab sau khi phân tích): ①Upload (drag&drop + validate ext/size), ②Phân loại (9 chiều + badge route), ③Dữ liệu (bảng field **edit được** + highlight confidence <80%), ④Biến&Khung (segmentation KHUNG vs BIEN, cập nhật realtime khi sửa field), ⑤Xuất (Generate + Download). Giữ nhận diện "TPBank BIZ": tím `#7B2CBF`, card radius 20, shadow tối thiểu, Bootstrap 5 CDN override bằng token. **Lớp `api.js`** gọi GAS đúng `API_CONTRACT.md` (`upload/process/generate`), **fallback `mock.js`** cùng shape để demo khi chưa có backend.
 - **Files changed:** *(repo SG, chưa commit)* mới `index.html`, `assets/css/theme.css`, `assets/js/config.js|mock.js|api.js|app.js`; cập nhật `AI_CONTEXT/{TODO_NEXT,SESSION_HANDOVER,PROJECT_STATE}.md`.
