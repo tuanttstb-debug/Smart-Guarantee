@@ -21,9 +21,15 @@ var SG = {
   },
   bool: function (key) { return String(this.prop(key, 'false')).toLowerCase() === 'true'; },
 
-  // Chuẩn hoá: bỏ '/' cuối và '/v1' cuối (Dify.gs sẽ nối '/v1/workflows/run').
-  // Chấp nhận cả 'https://api.dify.ai' lẫn 'https://api.dify.ai/v1'.
-  difyBaseUrl: function () { return this.prop('DIFY_BASE_URL').replace(/\/+$/, '').replace(/\/v1$/, ''); },
+  // Chuẩn hoá về HOST gốc (Dify.gs nối '/v1/workflows/run'). Chấp nhận mọi dạng:
+  // 'https://api.dify.ai', '.../v1', '.../v1/workflows/run' (± '/' cuối).
+  difyBaseUrl: function () {
+    return this.prop('DIFY_BASE_URL').trim()
+      .replace(/\/+$/, '')
+      .replace(/\/v1\/workflows\/run$/, '')
+      .replace(/\/+$/, '')
+      .replace(/\/v1$/, '');
+  },
   difyKey: function () { return this.prop('DIFY_API_KEY'); },
   difyStub: function () { return this.bool('DIFY_STUB'); },
   driveRootId: function () { return this.prop('DRIVE_ROOT_ID'); },
