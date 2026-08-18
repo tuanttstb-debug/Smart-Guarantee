@@ -4,6 +4,8 @@
 
 > **Delta (2026-08-18 #3 — Registry + config):** Phase 0 #3–4 XONG phía [CC] (`config/` 8 CSV + generator `tools/build-registry.js` + `gas/Setup.gs`). **Việc kế tiếp** = [TT] chạy `setupConfigSheet`/`setupDrive` → đặt `CONFIG_SHEET_ID`+`DRIVE_ROOT_ID` → import 8 CSV + upload template `/TEMPLATE`; rồi dựng **Dify Workflow** (Step 1–8, đọc config) — mắt xích lớn còn lại để tắt mock/stub.
 
+> **Delta (2026-08-18 #4 — 🎉 THÔNG LUỒNG):** UAT thật đã chạy end-to-end (FE→GAS→Dify→generate). Toàn bộ Phase 0–3 + Dify **live**. **Việc kế tiếp = TUNING chất lượng** (không phải build): [TT] chỉnh prompt (Dify) + alias/placeholder/registry (Sheet) + model → chạy `docs/UAT.md` (T1–T6) đo KPI. [CC] hỗ trợ: fix `$ND` OOXML nếu route ONLINE lỗi (TD-SG-06); tinh chỉnh schema/DOCX.
+
 > **Delta (2026-08-18 #2 — GAS gateway):** Phase 1 #6–7 XONG phía GAS (`gas/`: upload/process/generate/config + Dify blocking + Drive + OCR). [TT] deploy Web App → `config.js` (`USE_MOCK=false`); dựng Dify Workflow rồi tắt `DIFY_STUB`.
 
 > **Delta (2026-08-18 — FE scaffold):** Phase 1 #5 XONG (Bootstrap 5-tab, chạy demo bằng mock). Chờ [TT]: rule validity 1–5, bộ test, deploy GAS Web App lấy URL.
