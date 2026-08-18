@@ -1,5 +1,15 @@
 # SESSION HANDOVER — Smart Guarantee
 
+## ⭐ Tổng kết phiên 2026-08-18 #4 (Claude Code) — Wiring FE↔GAS live + verify
+- **Task completed:** [TT] deploy GAS Web App + tạo Sheet + Drive + upload template + đặt Script Properties (`CONFIG_SHEET_ID`, `DRIVE_ROOT_ID`, `DIFY_STUB=true`). [CC] nối FE: `config.js` → `GAS_WEB_APP_URL` (exec URL) + `USE_MOCK=false`. **Verify:** `GET ?action=ping` ✅ `{ok:true,service:...}`; `GET ?action=config` ✅ (đọc được Property, không còn "chưa đặt"). Phát hiện & sửa **bug** `handleConfig_` đọc sai tên tab (`TPB_VARIABLE_MAPPING`→`ND_VARIABLE_MAP`, cột tpb_var). Đọc Sheet qua Drive connector → xác nhận **8 tab mới có header, CHƯA import dữ liệu** (registry 285 dòng chưa nạp).
+- **Files changed:** *(chưa commit khi ghi)* `assets/js/config.js` (URL + USE_MOCK=false), `gas/Process.gs` (fix tên tab), `AI_CONTEXT/*`.
+- **Decision:** Với `DIFY_STUB=true`, `process`/`generate` **bỏ qua Sheet** (dữ liệu stub) → FE chạy end-to-end với GAS thật ngay, **không chờ** import Sheet. Sheet chỉ cần khi Dify thật đọc config. **POST không test được bằng curl** (GAS 302 redirect tới googleusercontent, curl không resend body đúng) — client đúng là browser `fetch` (FE) → [TT] nghiệm thu trên trình duyệt.
+- **Blocker:** (1) [TT] **import 8 CSV** vào Sheet (File▸Import▸Replace từng tab) — cần trước khi Dify đọc config. (2) `handleConfig_` fix cần **re-paste `Process.gs`** vào GAS (thấp — FE hiện không gọi `config`). (3) **Dify Workflow chưa dựng** (mắt xích lớn). (4) Verify POST end-to-end phải chạy FE trên browser (extension Chrome ở đây chưa kết nối).
+- **Next step:** [TT] mở FE (đã trỏ GAS thật) trên Chrome → upload PDF → chạy 5 tab (stub) để nghiệm thu wiring; import 8 CSV; re-paste Process.gs. [CC] draft **Dify Workflow spec** (prompt + JSON schema từng node) — mắt xích còn lại.
+- **Regression risk:** thấp — chỉ đổi config FE + 1 dòng tên tab GAS; mock vẫn fallback nếu URL rỗng.
+
+---
+
 ## ⭐ Tổng kết phiên 2026-08-18 #3 (Claude Code) — Registry + Sheet config (Phase 0 #3–4)
 - **Task completed:** (1) **Generator** `tools/build-registry.js` parse corpus thật `Tham khao/` → `config/TEMPLATE_REGISTRY.csv` **285 mẫu** (96 offline + 189 B8ZB non-archive; **active=168** = 96 offline + 72 TT79; TT06-07/TT22/TT40 `active=false`; Archive/old-thô loại; parse tên file → 9–11 chiều theo `TEMPLATE_SELECTION §3/§7`). (2) **7 CSV seed** từ doc: `CANONICAL_FIELDS`(25), `FIELD_ALIASES`(28), `PLACEHOLDER_MAP`(26), `ND_VARIABLE_MAP`(15), `SELECTION_RULES`(7, route §2), `FIELD_REQUIREMENTS`(27), `PROMPTS`(5). (3) **`gas/Setup.gs`**: `setupDrive()` (dựng cây Drive + in ROOT id) + `setupConfigSheet()` (tạo Spreadsheet 8 tab + header). (4) `config/README.md` — quy trình import Sheet + dựng Drive + upload template.
 - **Files changed:** *(repo SG, chưa commit)* mới `tools/build-registry.js`, `config/*.csv` (8) + `config/README.md`, `gas/Setup.gs`; cập nhật `AI_CONTEXT/{TODO_NEXT,SESSION_HANDOVER,PROJECT_STATE}.md`. *(Corpus `Tham khao/` vẫn để ngoài git — binary, [TT] quyết định.)*

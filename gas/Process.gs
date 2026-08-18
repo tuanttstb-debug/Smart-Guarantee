@@ -71,7 +71,7 @@ function handleConfig_(body) {
   try {
     var ss = SpreadsheetApp.openById(sheetId);
     out.canonical_fields = readColumn_(ss, 'CANONICAL_FIELDS', 0);
-    out.nd_variables = readColumn_(ss, 'TPB_VARIABLE_MAPPING', 0);
+    out.nd_variables = readColumn_(ss, 'ND_VARIABLE_MAP', 1); // cột tpb_var ($NDxxx)
   } catch (e) { out.note = 'Đọc config lỗi: ' + e.message; }
   return out;
 }
