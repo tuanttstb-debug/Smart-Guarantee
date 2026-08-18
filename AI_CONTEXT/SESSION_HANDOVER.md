@@ -1,5 +1,15 @@
 # SESSION HANDOVER — Smart Guarantee
 
+## ⭐ Tổng kết phiên 2026-08-18 #7 (Claude Code) — 4 file GAS live + root README + UAT runbook
+- **Task completed:** [TT] re-paste 4 file GAS (`Generate/Process/Dify/SheetConfig.gs`) — **live**, URL không đổi. [CC]: (1) root **`README.md`** — kiến trúc, cấu trúc repo, **bảng trạng thái** (FE/GAS/generator/Sheet/Drive ✅, Dify ⏳), how-to-run, data-boundary. (2) **`docs/UAT.md`** — runbook Phase 4: tiền đề, 6 ca test T1–T6 (phủ OFFLINE/ONLINE_B8ZB/KH_UPLOAD), quy trình test qua FE, bảng đo 6 KPI, cách tinh chỉnh qua Sheet (không sửa code), rủi ro theo dõi (đặc biệt `$ND` field-code).
+- **Files changed:** *(chưa commit khi ghi)* mới `README.md`, `docs/UAT.md`; cập nhật `AI_CONTEXT/{TODO_NEXT,SESSION_HANDOVER}.md`.
+- **Decision:** Toàn bộ **code đã xong & deploy**; mắt xích runtime duy nhất còn lại = **Dify Workflow** (việc [TT] trong Dify UI theo `dify/WORKFLOW_SPEC.md`). Không test thêm generate OFFLINE/ONLINE được từ CC vì stub luôn route KH_UPLOAD (cần Dify thật để classify ra route khác); POST tới GAS không test được bằng curl (302 redirect) → nghiệm thu qua FE/browser.
+- **Blocker:** Dify Workflow chưa dựng (chặn: test thật 3 route, tắt stub, đo KPI). Bộ dữ liệu demo (thư KH + kết quả mong muốn) cần [TT].
+- **Next step:** [TT] dựng Dify (spec) → tắt `DIFY_STUB` → chạy `docs/UAT.md` (T1–T6) → báo KPI + lỗi. [CC] chờ kết quả: fix `$ND` OOXML nếu replaceText không bắt field-code; tinh chỉnh prompt/alias/placeholder theo UAT; (backlog) Admin UI config-driven.
+- **Regression risk:** không — phiên này chỉ thêm tài liệu (README + UAT); không đụng code runtime.
+
+---
+
 ## ⭐ Tổng kết phiên 2026-08-18 #6 (Claude Code) — DOCX generator đầy đủ (Phase 3 #13–14)
 - **Task completed:** Rewrite `gas/Generate.gs` từ bản PoC (dựng lại text) → **generator đầy đủ giữ format**: (1) `selectTemplate_` đọc TEMPLATE_REGISTRY (Sheet) chọn mẫu theo classification (scored: guarantee_type bắt buộc + template_type/method/JV/sector/envelope; ONLINE ưu tiên TT79). (2) 3 route: **OFFLINE** replace `[...]`; **ONLINE_B8ZB** replace `«$NDxxx»`+`$NDxxx`; **KH_UPLOAD** dùng chính thư KH `/INPUT` làm khung, chỉ thay đoạn BIEN đã user-edit (đối chiếu segments `/EXTRACTED`, giữ nguyên KHUNG). (3) Cơ chế: `.docx`→Google Doc (`Drive.Files.insert convert`) → `replaceText` (escape regex) → export `.docx`→`/OUTPUT`. (4) **Kiểm sót biến** `leftoverVars_` (`[...]`/`«$ND»`) → trả `warnings`; FE tab 5 hiển thị cảnh báo.
 - **Files changed:** *(chưa commit khi ghi)* `gas/Generate.gs` (rewrite), `assets/js/app.js` (hiển thị warnings); `AI_CONTEXT/*`.

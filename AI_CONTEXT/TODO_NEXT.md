@@ -34,8 +34,9 @@
 14. ✅ [CC] Tab 5 Generate + Download + hiển thị cảnh báo biến sót (`app.js`).
 
 ## Phase 4 — Demo Dataset + UAT
-15. [TT] **Bộ dữ liệu demo**: thư KH mẫu đa loại (TPB/TT22/TT07/TT40/EVN/VIT + mẫu KH tự do) × loại BL.
-16. [CC/TT] Đo **KPI**: Classification 95%+ · Segmentation (khung/biến) · Extraction 90–95% · Mapping 95%+ · Reproduction sát thư KH · giảm nhập tay >70%.
+> ✅ [CC] **Runbook sẵn** (2026-08-18): `docs/UAT.md` — tiền đề, 6 ca test (T1–T6 phủ 3 route), quy trình test qua FE, bảng đo KPI, cách tinh chỉnh (Sheet, không sửa code), rủi ro theo dõi. + root `README.md` (kiến trúc + trạng thái + how-to-run).
+15. [TT] **Bộ dữ liệu demo** theo `docs/UAT.md §2`: thư KH mẫu đa loại × loại BL + kết quả mong muốn.
+16. [CC/TT] Đo **KPI** theo `docs/UAT.md §4` (sau khi Dify live).
 17. [CC] Ghi kết quả UAT + tinh chỉnh prompt/alias/placeholder-map (không sửa code).
 
 ## Backlog
