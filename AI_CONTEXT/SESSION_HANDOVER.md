@@ -1,5 +1,15 @@
 # SESSION HANDOVER — Smart Guarantee
 
+## ⭐ Tổng kết phiên 2026-08-18 #9 (Claude Code) — UAT thật + bỏ Advanced Drive Service
+- **Task completed:** [TT] import Dify + cập nhật GAS key + bật Drive v2 + redeploy. Chạy UAT thật (PDF `Test/IB2600452376.pdf` qua FE localhost:8765): **upload OK** (doc_id `SG-20260818-007`, DriveApp ghi được) nhưng **process lỗi `Drive is not defined`** (2 lần, kể cả sau khi bật Drive v2 — deployment/manifest không nhận Advanced Service). **Fix triệt để:** bỏ phụ thuộc Advanced Drive Service — tạo **`gas/Convert.gs`** convert PDF/Word→Google Doc + export docx qua **Drive REST API (UrlFetchApp + OAuth token)**; rewire `Text.gs` (extract) + `Generate.gs` (bỏ helper cũ) dùng `docxToGdoc_`/`gdocToDocxBlob_` mới; gỡ `enabledAdvancedServices` khỏi `appsscript.json`. Chỉ cần scope `drive` (đã cấp — upload chạy được).
+- **Files changed:** *(chưa commit khi ghi)* mới `gas/Convert.gs`; sửa `gas/Text.gs`, `gas/Generate.gs`, `gas/appsscript.json`; `AI_CONTEXT/SESSION_HANDOVER.md`.
+- **Decision:** dùng **Drive REST qua UrlFetch** thay Advanced Drive Service — tự chứa, không cần bật service/redeploy-đúng-version (đã lỗi 2 lần). `Drive is not defined` = ReferenceError → service không có trong manifest của deployment đang chạy; UrlFetch loại bỏ hẳn vấn đề.
+- **Blocker:** [TT] **re-paste vào GAS: `Convert.gs` (mới) + `Text.gs` + `Generate.gs` + `appsscript.json`** → **redeploy** (New version) → chạy lại. Có thể bỏ Advanced Drive Service đã bật (không còn dùng).
+- **Next step:** [TT] re-paste + redeploy → [CC] chạy lại UAT qua browser (server localhost:8765 + `Test/IB2600452376.pdf`). Kỳ vọng: process chạy OCR→Dify→trả classification/segments; kiểm route + generate.
+- **Regression risk:** trung bình — đổi cơ chế convert (Advanced Service→REST); upload/DriveApp không đổi. Cần test lại end-to-end sau re-paste.
+
+---
+
 ## ⭐ Tổng kết phiên 2026-08-18 #8 (Claude Code) — Dify DSL import-ready
 - **Task completed:** [TT] chọn hướng "Dify DSL import-ready". Tạo **`dify/smart-guarantee.workflow.yml`** — DSL Dify (mode workflow) dựng sẵn **8 node** (start→classify(LLM)→route(code)→segment(LLM)→extract(LLM)→validate(LLM)→assemble(code)→end) + 7 edge linear + prompt/JSON-schema từ spec. LLM trả JSON-text; code node strip ```json fences rồi parse; assemble xuất 5 khoá khớp `API_CONTRACT`/`Dify.gs`. **YAML valid** (js-yaml: 8 node/7 edge). Thêm mục "Import nhanh" vào `WORKFLOW_SPEC.md`.
 - **Files changed:** *(chưa commit khi ghi)* mới `dify/smart-guarantee.workflow.yml`; sửa `dify/WORKFLOW_SPEC.md`; cập nhật `AI_CONTEXT/{TODO_NEXT,SESSION_HANDOVER}.md`.

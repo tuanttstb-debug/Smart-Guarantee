@@ -113,24 +113,7 @@ function selectTemplate_(c, route) {
 }
 
 // ── Helpers ──
-
-/** Convert .docx blob → Google Doc (có thể edit), trả gdocId. */
-function docxToGdoc_(blob, title) {
-  var inserted = Drive.Files.insert(
-    { title: title, mimeType: 'application/vnd.google-apps.document' },
-    blob, { convert: true }
-  );
-  return inserted.id;
-}
-
-/** Export Google Doc → blob .docx. */
-function gdocToDocxBlob_(gdocId, name) {
-  var url = 'https://docs.google.com/feeds/download/documents/export/Export?id=' + gdocId + '&exportFormat=docx';
-  return UrlFetchApp.fetch(url, {
-    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
-    muteHttpExceptions: true,
-  }).getBlob().setName(name);
-}
+// docxToGdoc_ / gdocToDocxBlob_ → gas/Convert.gs (Drive REST, không cần Advanced Service).
 
 /** replaceText an toàn: escape regex trong chuỗi cần tìm. */
 function replaceLiteral_(body, find, value) {

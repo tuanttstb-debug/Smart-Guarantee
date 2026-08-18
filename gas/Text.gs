@@ -12,13 +12,8 @@ function extractText_(docId) {
 
   var tempDocId = null;
   try {
-    // Convert sang Google Doc (OCR) qua Advanced Drive Service (v2).
-    var inserted = Drive.Files.insert(
-      { title: docId + '__tmp', mimeType: 'application/vnd.google-apps.document' },
-      file.getBlob(),
-      { ocr: true, ocrLanguage: SG.ocrLang(), convert: true }
-    );
-    tempDocId = inserted.id;
+    // Convert sang Google Doc (OCR) qua Drive REST (Convert.gs) — không cần Advanced Service.
+    tempDocId = docxToGdoc_(file.getBlob(), docId + '__tmp');
 
     var doc = DocumentApp.openById(tempDocId);
     var raw = doc.getBody().getText() || '';
