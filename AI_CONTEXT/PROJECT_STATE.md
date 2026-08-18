@@ -47,6 +47,9 @@
 - Segmentation sai ranh giới khung/biến (thư KH lệch corpus) → fuzzy match + user review (TD-SG-04).
 - Repo chưa có remote → chưa backup cloud.
 
+## Delta (2026-08-18 #3 — Registry + config)
+**Config layer đầu tiên.** `tools/build-registry.js` sinh `config/TEMPLATE_REGISTRY.csv` từ corpus thật (285 mẫu; active=168 = 96 offline + 72 TT79; các circular cũ active=false; archive loại) + 7 CSV seed (`CANONICAL_FIELDS/FIELD_ALIASES/PLACEHOLDER_MAP/ND_VARIABLE_MAP/SELECTION_RULES/FIELD_REQUIREMENTS/PROMPTS`). `gas/Setup.gs` (`setupDrive`+`setupConfigSheet`) + `config/README.md` cho [TT] dựng Google Sheet + cây Drive + upload template. Registry **tự sinh** (chạy lại khi corpus đổi). Chưa nối runtime (cần [TT] import Sheet + đặt `CONFIG_SHEET_ID`/`DRIVE_ROOT_ID` + dựng Dify). Regression risk = không. Kế tiếp: Dify Workflow (mắt xích lớn còn lại).
+
 ## Delta (2026-08-18 #2 — GAS gateway)
 **Backend gateway đầu tiên.** `gas/` — 8 `.gs` + `appsscript.json` + README. Router `?action=upload|process|generate|config|ping`; `upload`→`/INPUT`; `process` = bóc text (Drive OCR, `Text.gs`) → Dify `/v1/workflows/run` blocking (`Dify.gs`, chuẩn hoá output theo `API_CONTRACT`) → lưu `/EXTRACTED` → trả FE; `generate` PoC dựng lại từ `segments` → `.docx` thật ở `/OUTPUT`. Secret ở Script Properties; `DIFY_STUB` test không cần Dify. FE `api.js` chuyển POST `text/plain` (né CORS preflight). Syntax 8/8 OK; **chưa deploy** (cần [TT] tạo GAS project + Web App URL + Dify Workflow thật). Regression risk = không (code mới, chưa deploy).
 

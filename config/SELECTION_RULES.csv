@@ -1,0 +1,8 @@
+rule_id,priority,when_currency,when_method,when_language,when_template_type,when_guarantee_type,then_route,note
+R1,10,NGT,*,*,*,*,KH_UPLOAD,Ngoại tệ khác VND → luôn Mẫu KH upload (TEMPLATE_SELECTION §2)
+R2,10,*,SW,*,*,*,KH_UPLOAD,Điện SWIFT → Mẫu KH upload
+R3,10,*,*,"TA,SN,KH",*,*,KH_UPLOAD,Ngôn ngữ ≠ Tiếng Việt → Mẫu KH upload
+R4,10,*,*,*,MK,*,KH_UPLOAD,Mẫu khác (MK) → Mẫu KH upload
+R5,20,VND,*,TV,*,BLDT,ONLINE_B8ZB,BLDT online (Muasamcong/B8ZB) → sinh theo TT79 (chỉ circular hiện hành)
+R6,30,VND,"TG,ĐT",TV,"TPB,T22,T07,T40,EVN,VIT",*,OFFLINE,Đủ điều kiện mẫu chuẩn TPBank offline → chọn theo TEMPLATE_REGISTRY
+R99,99,*,*,*,*,*,KH_UPLOAD,Mặc định (không khớp mẫu chuẩn) → Mẫu KH upload

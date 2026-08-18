@@ -2,7 +2,9 @@
 
 Ưu tiên trên xuống. Owner: [CC]=Claude Code · [TT]=Tuân. Roadmap demo **5–7 ngày**, 4 phase.
 
-> **Delta (2026-08-18 #2 — GAS gateway):** Phase 1 #6–7 XONG phía GAS (`gas/`: upload/process/generate/config + Dify blocking + Drive + OCR). **Việc kế tiếp** = [TT] deploy Web App → dán URL vào `config.js` + `USE_MOCK=false`; dựng Dify Workflow thật (Step 1–8) rồi tắt `DIFY_STUB`. Song song [CC] có thể làm Phase 0 #3–4 (REGISTRY/Sheet/Drive) để Dify có config đọc.
+> **Delta (2026-08-18 #3 — Registry + config):** Phase 0 #3–4 XONG phía [CC] (`config/` 8 CSV + generator `tools/build-registry.js` + `gas/Setup.gs`). **Việc kế tiếp** = [TT] chạy `setupConfigSheet`/`setupDrive` → đặt `CONFIG_SHEET_ID`+`DRIVE_ROOT_ID` → import 8 CSV + upload template `/TEMPLATE`; rồi dựng **Dify Workflow** (Step 1–8, đọc config) — mắt xích lớn còn lại để tắt mock/stub.
+
+> **Delta (2026-08-18 #2 — GAS gateway):** Phase 1 #6–7 XONG phía GAS (`gas/`: upload/process/generate/config + Dify blocking + Drive + OCR). [TT] deploy Web App → `config.js` (`USE_MOCK=false`); dựng Dify Workflow rồi tắt `DIFY_STUB`.
 
 > **Delta (2026-08-18 — FE scaffold):** Phase 1 #5 XONG (Bootstrap 5-tab, chạy demo bằng mock). Chờ [TT]: rule validity 1–5, bộ test, deploy GAS Web App lấy URL.
 
@@ -11,8 +13,8 @@
 ## Phase 0 — Chuẩn bị (ngay)
 1. [TT] **Tạo GitHub remote** `Smart-Guarantee` → `git remote add origin … && git push -u origin main`.
 2. [TT] Cung cấp **[CHỜ NỘI DUNG]** còn lại: (a) rule thời hạn (validity 1–5) chi tiết, (b) bộ test (thư KH vào + kết quả mong muốn).
-3. [CC] **Dựng TEMPLATE_REGISTRY** từ **offline `Tham khao/` (96)** + **online `B8ZB/` (theo circular, chỉ TT79 active=true, archive/old-thô=false)** → parse tên file → các chiều. + **PLACEHOLDER_MAP** (`[...]`) + **ND_VARIABLE_MAP** (`$ND`, `TPB_VARIABLES.md`) → Google Sheet.
-4. [CC/TT] Dựng cây **Drive** (`DRIVE_STRUCTURE.md`); nạp template .docx vào `/TEMPLATE` (offline + B8ZB TT79).
+3. ✅ [CC] **TEMPLATE_REGISTRY + config** — DONE (2026-08-18): generator `tools/build-registry.js` parse `Tham khao/` → `config/TEMPLATE_REGISTRY.csv` (**285 mẫu**: 96 offline + 189 B8ZB; active=168 = 96 offline + 72 TT79; TT06-07/TT22/TT40 `active=false`; archive/old-thô loại). + 7 CSV seed từ doc: `CANONICAL_FIELDS, FIELD_ALIASES, PLACEHOLDER_MAP, ND_VARIABLE_MAP, SELECTION_RULES, FIELD_REQUIREMENTS, PROMPTS`. Import Sheet: `gas/Setup.gs::setupConfigSheet` + `config/README.md`. **Còn [TT]:** chạy `setupConfigSheet` → import 8 CSV → đặt `CONFIG_SHEET_ID`.
+4. ✅/⏳ [CC/TT] **Drive** — GAS xong: `gas/Setup.gs::setupDrive` dựng cây `{INPUT,EXTRACTED,OUTPUT,TEMPLATE,CONFIG,LOGS}` + in ROOT id. **Còn [TT]:** chạy `setupDrive` → đặt `DRIVE_ROOT_ID`; **upload template .docx** vào `/TEMPLATE` (96 offline + 72 TT79, tên khớp `template_file`) — binary không nằm trong git.
 
 ## Phase 1 — MVP Upload + Extract
 5. ✅ [CC] **FE scaffold** Bootstrap 5-tab — DONE (2026-08-18): `index.html` + `assets/{css/theme.css, js/config.js|mock.js|api.js|app.js}`. Topbar tím + 5 nav-tabs step-gated; tab Upload (drag&drop, validate ext/size), classification 9 chiều + route, bảng field edit + highlight confidence <80%, segmentation khung/biến (cập nhật realtime khi edit), Generate + Download. Lớp `api.js` gọi GAS theo `API_CONTRACT.md`, **fallback `mock.js`** (cùng shape) để demo khi chưa có backend. Cấu hình 1 chỗ: `config.js` (`GAS_WEB_APP_URL` + `USE_MOCK`). JS `node --check` OK. *(Verify Chrome: chưa chạy được — extension chưa kết nối; đã mở bằng trình duyệt mặc định để [TT] xem.)*

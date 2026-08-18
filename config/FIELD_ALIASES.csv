@@ -1,0 +1,29 @@
+field_code,alias
+BENEFICIARY_NAME,Bên thụ hưởng
+BENEFICIARY_NAME,Bên nhận bảo lãnh
+BENEFICIARY_NAME,Chủ đầu tư
+BENEFICIARY_NAME,Employer
+BENEFICIARY_NAME,Beneficiary
+CONTRACTOR_NAME,Nhà thầu
+CONTRACTOR_NAME,Bên được bảo lãnh
+CONTRACTOR_NAME,Khách hàng được bảo lãnh
+CONTRACTOR_NAME,Applicant
+GUARANTEE_AMOUNT,Số tiền bảo lãnh
+GUARANTEE_AMOUNT,Giá trị bảo lãnh
+GUARANTEE_AMOUNT,Số tiền
+AMOUNT_TEXT,Số tiền bằng chữ
+AMOUNT_TEXT,Bằng chữ
+VALIDITY,Thời hạn hiệu lực
+VALIDITY,Hiệu lực bảo lãnh
+VALIDITY,Thời hạn bảo lãnh
+BID_PACKAGE_NAME,Tên gói thầu
+BID_PACKAGE_NAME,Gói thầu
+BID_NOTICE_NO,Số thông báo mời thầu
+BID_NOTICE_NO,E-TBMT
+PROJECT_NAME,Tên dự án
+CONTRACT_REF,Số hợp đồng
+CONTRACT_REF,Tên hợp đồng
+ISSUING_BANK_NAME,Ngân hàng bảo lãnh
+ISSUING_BANK_NAME,Bên bảo lãnh
+GUARANTEE_NUMBER,Số bảo lãnh
+HEALTH_FACILITY,Cơ sở y tế

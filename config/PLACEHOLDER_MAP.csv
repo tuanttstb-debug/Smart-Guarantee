@@ -1,0 +1,27 @@
+field_code,placeholder
+ISSUING_BANK_NAME,[ghi tên của ngân hàng]
+ISSUING_BANK_ADDR,[ghi địa chỉ của ngân hàng]
+ISSUING_BANK_ADDR,[địa chỉ chi nhánh]
+BENEFICIARY_NAME,[ghi tên Chủ đầu tư]
+BENEFICIARY_NAME,[bên nhận bảo lãnh]
+BENEFICIARY_ADDR,[Địa chỉ Chủ đầu tư]
+BENEFICIARY_ADDR,[địa chỉ]
+CONTRACTOR_NAME,[ghi tên Nhà thầu]
+CONTRACTOR_NAME,[tên khách hàng được bảo lãnh]
+CONTRACTOR_NAME,[ghi tên của nhà thầu]
+CONTRACTOR_ADDR,[địa chỉ của khách hàng]
+CONTRACTOR_ADDR,[ghi tên và địa chỉ của nhà thầu]
+GUARANTEE_AMOUNT,[ghi số tiền bảo lãnh]
+GUARANTEE_AMOUNT,[bằng số]
+AMOUNT_TEXT,"[ghi rõ giá trị tương ứng bằng số, bằng chữ]"
+AMOUNT_TEXT,"[ghi rõ giá trị bằng số, bằng chữ và đồng tiền sử dụng]"
+BID_PACKAGE_NAME,[ghi tên gói thầu]
+BID_PACKAGE_NAME,[nội dung mời thầu hoặc số hiệu gói thầu]
+CONTRACT_REF,"[ghi tên hợp đồng, số hợp đồng]"
+CONTRACT_REF,[số hợp đồng]
+ISSUE_DATE,[ngày…tháng…năm]
+ISSUE_DATE,[ngày ký]
+ISSUE_DATE,[……/……/………]
+COUNTRY,[ghi tên quốc gia hoặc vùng lãnh thổ]
+COUNTRY,[Quốc gia]
+HEALTH_FACILITY,[ghi tên cơ sở y tế ký hợp đồng]

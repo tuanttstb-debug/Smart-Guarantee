@@ -1,0 +1,27 @@
+field_code,field_name,data_type
+ISSUING_BANK_NAME,Tên ngân hàng bảo lãnh (TPBank),text
+ISSUING_BANK_ADDR,Địa chỉ ngân hàng bảo lãnh,text
+ISSUING_BRANCH,Chi nhánh TPBank phát hành,text
+ISSUING_BRANCH_ADDR,Địa chỉ chi nhánh phát hành,text
+BENEFICIARY_NAME,Bên thụ hưởng / nhận bảo lãnh (Chủ đầu tư),text
+BENEFICIARY_ADDR,Địa chỉ bên thụ hưởng,text
+CONTRACTOR_NAME,Bên được bảo lãnh (Nhà thầu / khách hàng),text
+CONTRACTOR_ADDR,Địa chỉ bên được bảo lãnh,text
+GUARANTEE_AMOUNT,Số tiền bảo lãnh (bằng số),amount
+AMOUNT_TEXT,Số tiền bảo lãnh (bằng chữ),text
+CURRENCY,Đơn vị tiền tệ,text
+VALIDITY,Thời hạn / hiệu lực bảo lãnh,text
+VALID_FROM,Ngày bắt đầu hiệu lực,date
+VALID_TO,Ngày hết hiệu lực,date
+ISSUE_DATE,Ngày phát hành bảo lãnh,date
+SIGN_DATE,Ngày ký hợp đồng,date
+GUARANTEE_NUMBER,Số bảo lãnh,text
+BID_PACKAGE_NAME,Tên gói thầu,text
+BID_NOTICE_NO,Số thông báo mời thầu / E-TBMT,text
+PROJECT_NAME,Tên dự án,text
+CONTRACT_REF,Số / tên hợp đồng,text
+CONTRACT_STATUS,Tình trạng hợp đồng,text
+JOINT_VENTURE_INFO,Thông tin liên danh,text
+HEALTH_FACILITY,Tên cơ sở y tế ký hợp đồng,text
+COUNTRY,Quốc gia / vùng lãnh thổ,text
+SECTOR,Lĩnh vực,text
