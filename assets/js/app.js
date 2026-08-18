@@ -184,7 +184,9 @@
       el.outputName.textContent = (state.docId || 'thu-bao-lanh') + '.docx';
       el.downloadLink.href = out.download_url || '#';
       el.downloadBox.classList.remove('d-none');
-      el.generateStatus.innerHTML = '<span style="color:var(--sg-ok)">✓ Đã sinh thư.</span>';
+      const warns = (out.warnings || []);
+      el.generateStatus.innerHTML = '<span style="color:var(--sg-ok)">✓ Đã sinh thư.</span>' +
+        (warns.length ? ' <span style="color:var(--sg-warn)">⚠ ' + esc(warns.join(' · ')) + '</span>' : '');
     } catch (err) {
       el.generateStatus.innerHTML = '<span style="color:var(--sg-danger)">✕ Lỗi: ' + esc(err.message) + '</span>';
     } finally {

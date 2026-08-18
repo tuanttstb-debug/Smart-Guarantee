@@ -30,8 +30,8 @@
 12. [TT] Chốt **LLM** (Qwen/Gemini/GPT-4o/DeepSeek) theo chi phí/độ chính xác.
 
 ## Phase 3 — Reproduce / Generate DOCX
-13. [CC] **DOCX generator** (GAS, `DOCX_GENERATOR.md`): route ONLINE_B8ZB (điền MERGEFIELD `$ND`, template TT79) · route OFFLINE (replace `[...]`) · route KH_UPLOAD (điền biến trên thư KH, giữ khung) → `/OUTPUT` → download. Kiểm sót biến (`[...]`/`«$ND»`).
-14. [CC] Tab 5 Generate + Download nối end-to-end (thư sát thư KH).
+13. ✅ [CC] **DOCX generator đầy đủ** — DONE (2026-08-18): `gas/Generate.gs` rewrite. `selectTemplate_` chọn mẫu từ TEMPLATE_REGISTRY (Sheet) theo classification (scored: BL bắt buộc + template_type/method/JV/sector/envelope). ONLINE_B8ZB → replace `«$NDxxx»`/`$NDxxx`; OFFLINE → replace `[...]`; KH_UPLOAD → dùng chính thư KH `/INPUT` làm khung, chỉ thay đoạn BIEN đã user-edit (giữ KHUNG). Google Doc + replaceText (escape regex) → export `.docx` → `/OUTPUT`. **Kiểm sót biến** (`leftoverVars_`) → trả `warnings`. **Còn [TT]:** re-paste `Generate.gs` (+ 3 file GAS trước) vào Apps Script.
+14. ✅ [CC] Tab 5 Generate + Download + hiển thị cảnh báo biến sót (`app.js`).
 
 ## Phase 4 — Demo Dataset + UAT
 15. [TT] **Bộ dữ liệu demo**: thư KH mẫu đa loại (TPB/TT22/TT07/TT40/EVN/VIT + mẫu KH tự do) × loại BL.

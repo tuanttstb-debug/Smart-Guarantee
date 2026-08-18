@@ -1,63 +1,151 @@
 /**
- * Generate.gs — action=generate (API_CONTRACT §generate).
+ * Generate.gs — action=generate (API_CONTRACT §generate, DOCX_GENERATOR.md).
+ * Sinh DOCX theo 3 route, giữ format bằng Google Doc + replaceText → export .docx.
  *
- * ⚠️ PoC PLACEHOLDER. Ở đây sinh 1 DOCX tối giản: dựng lại thư từ `segments`
- * (KHUNG giữ nguyên, BIEN thay bằng giá trị đã user-edit) — đủ để nối end-to-end
- * FE↔GAS và tải file thật. **Bản đầy đủ** (điền placeholder [...]/$ND vào TEMPLATE
- * .docx thật, giữ định dạng gốc, kiểm sót biến) là Phase 3 #13 — xem DOCX_GENERATOR.md.
+ *   OFFLINE      → chọn template offline (TEMPLATE_REGISTRY) → replace [...] bằng giá trị.
+ *   ONLINE_B8ZB  → chọn template B8ZB TT79 → replace MERGEFIELD «$NDxxx» bằng giá trị.
+ *   KH_UPLOAD    → dùng CHÍNH thư KH (/INPUT) làm khung → thay đoạn BIEN đã user-edit,
+ *                  giữ nguyên KHUNG ("sát thư khách hàng").
  *
  * Request:  { doc_id, route, classification, variables }
- * Response: { ok, output_path, download_url }
+ * Response: { ok, output_path, download_url, warnings, leftover_vars }
  */
 function handleGenerate_(body) {
-  var docId = body.doc_id || nextDocId_();
+  var docId = body.doc_id;
+  if (!docId) throw err_('PARSE_ERROR', 'Thiếu doc_id');
+  var route = body.route || 'KH_UPLOAD';
   var variables = body.variables || {};
+  var classification = body.classification || {};
 
-  // Ưu tiên dựng lại từ segments đã lưu ở /EXTRACTED (giữ khung thư KH).
-  var extracted = readExtracted_(docId);
-  var lines = [];
-  if (extracted && extracted.segments && extracted.segments.length) {
-    var buf = '';
-    extracted.segments.forEach(function (s) {
-      var piece = (s.kind === 'BIEN' && s.placeholder && variables[s.placeholder] != null)
-        ? variables[s.placeholder]
-        : s.text;
-      buf += (buf ? ' ' : '') + piece;
-    });
-    lines.push(buf);
-  } else {
-    // Fallback: liệt kê biến (khi không có segments).
-    Object.keys(variables).forEach(function (k) { lines.push(k + ': ' + variables[k]); });
-  }
+  var built = (route === 'KH_UPLOAD')
+    ? reproduceCustomer_(docId, variables)
+    : fillTemplate_(route, classification, variables);
 
-  var tempDoc = DocumentApp.create(docId + '__gen');
-  var b = tempDoc.getBody();
-  b.appendParagraph('THƯ BẢO LÃNH — ' + docId).setHeading(DocumentApp.ParagraphHeading.HEADING1);
-  lines.forEach(function (ln) { b.appendParagraph(ln); });
-  tempDoc.saveAndClose();
-
-  var tempId = tempDoc.getId();
-  var docxBlob;
-  try {
-    var url = 'https://docs.google.com/feeds/download/documents/export/Export?id=' + tempId + '&exportFormat=docx';
-    docxBlob = UrlFetchApp.fetch(url, {
-      headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
-      muteHttpExceptions: true,
-    }).getBlob().setName(docId + '.docx');
-  } finally {
-    try { DriveApp.getFileById(tempId).setTrashed(true); } catch (_) {}
-  }
-
+  // Xuất DOCX → /OUTPUT
+  var docxBlob = gdocToDocxBlob_(built.gdocId, docId + '.docx');
+  try { DriveApp.getFileById(built.gdocId).setTrashed(true); } catch (_) {}
   var existing = findFile_('OUTPUT', docId + '.docx');
   if (existing) existing.setTrashed(true);
   var outFile = subFolder_('OUTPUT').createFile(docxBlob);
 
-  logLine_('generate doc_id=' + docId + ' route=' + (body.route || '-'));
+  logLine_('generate doc_id=' + docId + ' route=' + route +
+    ' template=' + (built.template || '-') + ' leftover=' + built.leftover.length);
+
   return {
     ok: true,
     output_path: '/OUTPUT/' + docId + '.docx',
     download_url: outFile.getDownloadUrl() || outFile.getUrl(),
+    warnings: built.leftover.length ? ['Còn biến chưa điền trong thư: ' + built.leftover.join(', ')] : [],
+    leftover_vars: built.leftover,
   };
+}
+
+/** Route OFFLINE / ONLINE_B8ZB — điền template chuẩn. */
+function fillTemplate_(route, classification, variables) {
+  var row = selectTemplate_(classification, route);
+  if (!row) throw err_('TEMPLATE_NOT_FOUND', 'Không tìm mẫu phù hợp trong REGISTRY (route=' + route + ')');
+  var tplFile = findFile_('TEMPLATE', row.template_file);
+  if (!tplFile) throw err_('TEMPLATE_NOT_FOUND', 'Chưa upload template vào /TEMPLATE: ' + row.template_file);
+
+  var gdocId = docxToGdoc_(tplFile.getBlob(), row.template_id + '__gen');
+  var doc = DocumentApp.openById(gdocId);
+  var b = doc.getBody();
+
+  Object.keys(variables).forEach(function (key) {
+    var val = String(variables[key] == null ? '' : variables[key]);
+    replaceLiteral_(b, key, val);                 // [ghi ...] hoặc $ND001
+    if (key.charAt(0) === '$') replaceLiteral_(b, '«' + key + '»', val); // MERGEFIELD dạng «$ND001»
+  });
+  doc.saveAndClose();
+
+  return { gdocId: gdocId, template: row.template_file, leftover: leftoverVars_(gdocId) };
+}
+
+/** Route KH_UPLOAD — dựng lại trên chính thư KH, chỉ thay BIEN đã đổi. */
+function reproduceCustomer_(docId, variables) {
+  var input = inputFileFor_(docId);
+  if (!input) throw err_('TEMPLATE_NOT_FOUND', 'Không thấy thư KH trong /INPUT: ' + docId);
+  var gdocId = docxToGdoc_(input.getBlob(), docId + '__gen');
+  var doc = DocumentApp.openById(gdocId);
+  var b = doc.getBody();
+
+  var extracted = readExtracted_(docId);
+  var segs = (extracted && extracted.segments) || [];
+  segs.forEach(function (s) {
+    if (s.kind !== 'BIEN' || !s.placeholder) return;
+    var v = variables[s.placeholder];
+    if (v == null || String(v) === String(s.text)) return; // không đổi → giữ nguyên
+    replaceLiteral_(b, s.text, String(v)); // thay giá trị gốc bằng giá trị đã user-edit
+  });
+  doc.saveAndClose();
+
+  return { gdocId: gdocId, template: '(thư KH)', leftover: [] };
+}
+
+/**
+ * selectTemplate_ — chọn 1 mẫu từ TEMPLATE_REGISTRY (Sheet) theo classification.
+ * Ràng buộc: cùng guarantee_type + source + active; xếp hạng theo template_type/method/JV/sector/envelope.
+ */
+function selectTemplate_(c, route) {
+  var id = SG.configSheetId();
+  if (!id) throw err_('TEMPLATE_NOT_FOUND', 'CONFIG_SHEET_ID chưa đặt — không đọc được REGISTRY');
+  var ss = SpreadsheetApp.openById(id);
+  var rows = readTable_(ss, 'TEMPLATE_REGISTRY').filter(function (r) {
+    return String(r.active).toLowerCase() === 'true' && r.source === route;
+  });
+  if (!rows.length) return null;
+
+  var jv = (c.joint_venture && c.joint_venture !== 'KO') ? 'LD' : 'KO';
+  function score(r) {
+    if (r.guarantee_type !== c.guarantee_type) return -1; // BL phải khớp
+    var s = 100;
+    if (route === 'ONLINE_B8ZB') { if (r.circular === 'TT79') s += 10; }
+    else if (r.template_type === c.template_type) s += 20;
+    if (r.method === c.method) s += 5;
+    if (r.joint_venture === jv) s += 5;
+    if (c.sector && r.sector === c.sector) s += 8;
+    if (c.envelope && r.envelope === c.envelope) s += 8;
+    return s;
+  }
+  var best = null, bs = -1;
+  rows.forEach(function (r) { var sc = score(r); if (sc > bs) { bs = sc; best = r; } });
+  return bs >= 0 ? best : null;
+}
+
+// ── Helpers ──
+
+/** Convert .docx blob → Google Doc (có thể edit), trả gdocId. */
+function docxToGdoc_(blob, title) {
+  var inserted = Drive.Files.insert(
+    { title: title, mimeType: 'application/vnd.google-apps.document' },
+    blob, { convert: true }
+  );
+  return inserted.id;
+}
+
+/** Export Google Doc → blob .docx. */
+function gdocToDocxBlob_(gdocId, name) {
+  var url = 'https://docs.google.com/feeds/download/documents/export/Export?id=' + gdocId + '&exportFormat=docx';
+  return UrlFetchApp.fetch(url, {
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true,
+  }).getBlob().setName(name);
+}
+
+/** replaceText an toàn: escape regex trong chuỗi cần tìm. */
+function replaceLiteral_(body, find, value) {
+  if (!find) return;
+  var esc = String(find).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  body.replaceText(esc, value == null ? '' : String(value));
+}
+
+/** Quét biến còn sót ([...] hoặc «$ND...») trong doc. */
+function leftoverVars_(gdocId) {
+  var text = DocumentApp.openById(gdocId).getBody().getText();
+  var out = [];
+  (text.match(/\[[^\]\n]{1,60}\]/g) || []).forEach(function (m) { if (out.indexOf(m) < 0) out.push(m); });
+  (text.match(/«[^»\n]{1,40}»/g) || []).forEach(function (m) { if (out.indexOf(m) < 0) out.push(m); });
+  return out;
 }
 
 function readExtracted_(docId) {
