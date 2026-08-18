@@ -47,6 +47,9 @@
 - Segmentation sai ranh giới khung/biến (thư KH lệch corpus) → fuzzy match + user review (TD-SG-04).
 - Repo chưa có remote → chưa backup cloud.
 
+## Delta (2026-08-18 — FE scaffold)
+**Có code đầu tiên.** FE scaffold Bootstrap 5-tab (Phase 1 #5): `index.html` + `assets/css/theme.css` + `assets/js/{config,mock,api,app}.js`. Luồng Upload→Phân loại→Dữ liệu→Biến&Khung→Xuất chạy được **bằng mock** (`mock.js` khớp `API_CONTRACT.md`); `api.js` gọi GAS thật khi `USE_MOCK=false` + có URL. Nhận diện tím `#7B2CBF`, edit field + highlight confidence <80%, segmentation realtime. Verify Chrome chưa chạy (extension chưa kết nối) → mở trình duyệt mặc định để [TT] xem. Chưa commit. Regression risk = không (file mới độc lập). Kế tiếp: GAS gateway (#6–7) hoặc Phase 0 (#3–4).
+
 ## Delta (2026-08-17 — kết phiên)
 Bộ context thiết kế hoàn chỉnh (15 doc) + đồng bộ AIOS hub v4; commit & push lên remote `Smart-Guarantee`. Sẵn sàng **Phase 0** (build REGISTRY/ND_MAP/PLACEHOLDER_MAP + Sheet + Drive). Chi tiết 6 trường: `SESSION_HANDOVER.md` (mục ⭐ tổng kết). Chưa có code → regression risk = không.
 

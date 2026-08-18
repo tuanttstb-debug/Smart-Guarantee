@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smart Guarantee — TPBank</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="assets/css/theme.css" rel="stylesheet" />
+</head>
+<body>
+  <!-- ═══ Topbar (tím mảnh) ═══ -->
+  <header class="sg-topbar">
+    <div class="container-xl d-flex align-items-center gap-2">
+      <span class="sg-topbar__mark"></span>
+      <span class="sg-topbar__brand">TPBank</span>
+      <span class="sg-topbar__sep">·</span>
+      <span class="sg-topbar__app">Smart Guarantee</span>
+      <span class="badge sg-badge-poc ms-2">PoC</span>
+      <span class="ms-auto sg-topbar__doc" id="docIdLabel"></span>
+    </div>
+  </header>
+
+  <main class="container-xl py-4">
+    <!-- ═══ 5-step nav ═══ -->
+    <ul class="nav sg-steps mb-3" id="sgSteps" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-step="1" data-bs-toggle="tab" data-bs-target="#tab-upload" type="button" role="tab">
+          <span class="sg-steps__num">1</span> Upload
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-step="2" data-bs-toggle="tab" data-bs-target="#tab-classify" type="button" role="tab" disabled>
+          <span class="sg-steps__num">2</span> Phân loại
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-step="3" data-bs-toggle="tab" data-bs-target="#tab-extract" type="button" role="tab" disabled>
+          <span class="sg-steps__num">3</span> Dữ liệu
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-step="4" data-bs-toggle="tab" data-bs-target="#tab-segments" type="button" role="tab" disabled>
+          <span class="sg-steps__num">4</span> Biến &amp; Khung
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-step="5" data-bs-toggle="tab" data-bs-target="#tab-generate" type="button" role="tab" disabled>
+          <span class="sg-steps__num">5</span> Xuất
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- ─── Tab 1: Upload ─── -->
+      <section class="tab-pane fade show active" id="tab-upload" role="tabpanel">
+        <div class="sg-card">
+          <h2 class="sg-card__title">Tải thư bảo lãnh của khách hàng</h2>
+          <p class="text-muted mb-4">Hỗ trợ PDF hoặc Word (.doc/.docx). Hệ thống sẽ nhận diện khung mẫu, bóc tách biến và soạn lại thư sát bản gốc.</p>
+
+          <label id="dropzone" class="sg-dropzone" for="fileInput">
+            <input type="file" id="fileInput" accept=".pdf,.doc,.docx" hidden />
+            <div class="sg-dropzone__icon">⬆</div>
+            <div class="sg-dropzone__main">Kéo &amp; thả tệp vào đây, hoặc <span class="sg-link">chọn tệp</span></div>
+            <div class="sg-dropzone__hint">PDF, DOC, DOCX — tối đa 20&nbsp;MB</div>
+          </label>
+
+          <div id="fileMeta" class="sg-filemeta d-none">
+            <span class="sg-filemeta__icon">📄</span>
+            <div class="flex-grow-1">
+              <div class="sg-filemeta__name" id="fileName"></div>
+              <div class="sg-filemeta__size text-muted" id="fileSize"></div>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" id="fileClear" type="button">Đổi tệp</button>
+          </div>
+
+          <div class="mt-4 d-flex align-items-center gap-3">
+            <button class="btn btn-primary btn-lg px-4" id="analyzeBtn" disabled>Phân tích bằng AI</button>
+            <span class="sg-inline-status" id="uploadStatus"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Tab 2: Classification ─── -->
+      <section class="tab-pane fade" id="tab-classify" role="tabpanel">
+        <div class="sg-card">
+          <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+            <div>
+              <h2 class="sg-card__title mb-1">Kết quả phân loại</h2>
+              <p class="text-muted mb-0">AI nhận diện các chiều nghiệp vụ của thư và định tuyến xử lý.</p>
+            </div>
+            <span class="sg-route" id="routeBadge"></span>
+          </div>
+          <div class="sg-dim-grid mt-4" id="classifyGrid"></div>
+          <div class="mt-4 text-end">
+            <button class="btn btn-primary" data-goto="3">Tiếp tục → Dữ liệu bóc tách</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Tab 3: Extracted fields ─── -->
+      <section class="tab-pane fade" id="tab-extract" role="tabpanel">
+        <div class="sg-card">
+          <h2 class="sg-card__title mb-1">Dữ liệu bóc tách</h2>
+          <p class="text-muted">Các trường đã nhận diện. <span class="sg-conf-legend"><i class="sg-dot sg-dot--low"></i> độ tin cậy thấp — vui lòng kiểm tra &amp; chỉnh sửa.</span></p>
+          <div class="table-responsive">
+            <table class="table sg-table align-middle mb-0">
+              <thead>
+                <tr><th style="width:34%">Trường</th><th>Giá trị</th><th style="width:120px" class="text-center">Tin cậy</th></tr>
+              </thead>
+              <tbody id="extractBody"></tbody>
+            </table>
+          </div>
+          <div class="mt-4 text-end">
+            <button class="btn btn-primary" data-goto="4">Tiếp tục → Biến &amp; Khung</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Tab 4: Segmentation ─── -->
+      <section class="tab-pane fade" id="tab-segments" role="tabpanel">
+        <div class="sg-card">
+          <h2 class="sg-card__title mb-1">Khung mẫu &amp; biến</h2>
+          <p class="text-muted">Phần <span class="sg-seg-chip sg-seg-chip--khung">khung cố định</span> giữ nguyên; phần <span class="sg-seg-chip sg-seg-chip--bien">biến</span> được thay bằng giá trị bóc tách.</p>
+          <div class="sg-segview" id="segView"></div>
+          <div class="mt-4 text-end">
+            <button class="btn btn-primary" data-goto="5">Tiếp tục → Xuất thư</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Tab 5: Generate ─── -->
+      <section class="tab-pane fade" id="tab-generate" role="tabpanel">
+        <div class="sg-card text-center">
+          <h2 class="sg-card__title">Soạn &amp; xuất thư bảo lãnh</h2>
+          <p class="text-muted mb-4">Sinh file Word sát với thư khách hàng, biến đã điền &amp; kiểm tra.</p>
+          <button class="btn btn-primary btn-lg px-5" id="generateBtn">Sinh thư (.docx)</button>
+          <div class="sg-inline-status justify-content-center mt-3" id="generateStatus"></div>
+          <div id="downloadBox" class="sg-download d-none">
+            <span class="sg-filemeta__icon">✅</span>
+            <div class="text-start flex-grow-1">
+              <div class="fw-semibold" id="outputName">Thư bảo lãnh.docx</div>
+              <div class="text-muted small">Đã sẵn sàng tải xuống</div>
+            </div>
+            <a class="btn btn-primary" id="downloadLink" target="_blank" rel="noopener">Tải xuống</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="sg-foot">Smart Guarantee · PoC/Demo TPBank — Document Intelligence · <span id="modeTag"></span></footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/mock.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

@@ -1,5 +1,15 @@
 # SESSION HANDOVER — Smart Guarantee
 
+## ⭐ Tổng kết phiên 2026-08-18 (Claude Code) — FE scaffold Bootstrap 5-tab
+- **Task completed:** Dựng **FE scaffold** (Phase 1 #5) theo `DESIGN_SYSTEM.md`: `index.html` + `assets/css/theme.css` + `assets/js/{config,mock,api,app}.js`. 5-tab step-gated (mở khoá tab sau khi phân tích): ①Upload (drag&drop + validate ext/size), ②Phân loại (9 chiều + badge route), ③Dữ liệu (bảng field **edit được** + highlight confidence <80%), ④Biến&Khung (segmentation KHUNG vs BIEN, cập nhật realtime khi sửa field), ⑤Xuất (Generate + Download). Giữ nhận diện "TPBank BIZ": tím `#7B2CBF`, card radius 20, shadow tối thiểu, Bootstrap 5 CDN override bằng token. **Lớp `api.js`** gọi GAS đúng `API_CONTRACT.md` (`upload/process/generate`), **fallback `mock.js`** cùng shape để demo khi chưa có backend.
+- **Files changed:** *(repo SG, chưa commit)* mới `index.html`, `assets/css/theme.css`, `assets/js/config.js|mock.js|api.js|app.js`; cập nhật `AI_CONTEXT/{TODO_NEXT,SESSION_HANDOVER,PROJECT_STATE}.md`.
+- **Decision:** (1) Demo trước bằng **mock** (USE_MOCK auto-on khi `GAS_WEB_APP_URL` rỗng) → FE nghiệm thu được ngay, không chờ GAS/Dify. (2) Cấu hình tập trung 1 file `config.js`; đổi backend chỉ cần dán URL + tắt mock, **không sửa `app.js`**. (3) Ngưỡng highlight confidence thấp = **<80%**. (4) Token primary theo DESIGN_SYSTEM `#7B2CBF` (SHTD thật là `#4B1FAF` — chỉ mượn nhận diện, không copy).
+- **Blocker:** **Verify Chrome chưa chạy được** — Claude browser extension chưa kết nối (đã mở `index.html` bằng trình duyệt mặc định để [TT] xem thủ công). GAS Web App **chưa deploy** → chưa có URL thật để tắt mock.
+- **Next step:** [TT] xem FE + duyệt UI; deploy GAS Web App lấy URL. [CC] Phase 1 #6–7 (GAS gateway `upload/process` + nối Dify) **hoặc** Phase 0 #3–4 (REGISTRY/ND_MAP/PLACEHOLDER_MAP + Sheet + Drive) — chọn theo ưu tiên [TT]; khi có GAS URL → `config.js`: `USE_MOCK=false`.
+- **Regression risk:** không — toàn file FE mới, độc lập; chưa nối backend; chưa commit.
+
+---
+
 ## ⭐ Tổng kết phiên 2026-08-17 (kết phiên) — Cho: phiên tiếp (Phase 0)
 - **Task completed:** Onboard PRJ-SG từ brief + scan toàn bộ nguồn tham khảo. Dựng **đủ bộ context thiết kế** (5 lõi + DESIGN_SYSTEM + 9 doc). Parse `Logic hiển thị.xlsx` (logic chọn mẫu **9 chiều**) + **96 mẫu offline** + **221 mẫu online B8ZB** (theo vòng đời thông tư). **Hoà giải 2 hệ biến** (`$ND` MERGEFIELD online ↔ `[...]` offline). Chốt trọng tâm = **segmentation khung/biến trên thư KH upload**. Đồng bộ AIOS hub.
 - **Files changed:** `AI_CONTEXT/` — 5 lõi + DESIGN_SYSTEM (cập nhật) + 9 doc thiết kế (`SYSTEM_ARCHITECTURE`, `DATA_MODEL`, `TEMPLATE_SELECTION`, `VARIABLE_SEGMENTATION`, `TPB_VARIABLES`, `DIFY_WORKFLOW`, `API_CONTRACT`, `DRIVE_STRUCTURE`, `DOCX_GENERATOR`); `CLAUDE.md`. (AIOS) `PRJ-SG.md` (v4), `PORTFOLIO.md`, `projects.json`. *(Chưa commit: `Tham khao/`, `Prompt mo dau.MD`, `Tổng quan.MD` — chờ [TT] quyết định.)*
