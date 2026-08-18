@@ -1,5 +1,15 @@
 # SESSION HANDOVER — Smart Guarantee
 
+## ⭐ Tổng kết phiên 2026-08-18 #5 (Claude Code) — Dify spec + GAS truyền config
+- **Task completed:** [TT] xác nhận **FE↔GAS chạy E2E trên browser** (network log: `generate` 302→echo 200) + import 8 CSV xong. [CC]: (1) **`gas/SheetConfig.gs`** — đọc CONFIG_SHEET_ID → bundle config nhẹ (`canonical_fields, field_aliases, placeholder_map, nd_variable_map, field_requirements, selection_rules, prompts`; KHÔNG gồm registry 285 dòng), cache/execution. (2) **`Dify.gs`** truyền `config_json` vào inputs (bỏ `config_ref`) — GAS là nơi duy nhất chạm Sheet, Dify nhận config qua input. (3) **`dify/WORKFLOW_SPEC.md`** — spec dựng workflow paste-ready: 6 node (Classify→Route→Segment→Extract+Map→Validate→Assemble) + prompt + JSON schema từng node + wiring biến + output 5 khoá khớp `API_CONTRACT`.
+- **Files changed:** *(chưa commit khi ghi)* mới `gas/SheetConfig.gs`, `dify/WORKFLOW_SPEC.md`; sửa `gas/Dify.gs`; cập nhật `AI_CONTEXT/*`. Đã push tới `8cb274f` trước đó.
+- **Decision:** (1) Dify **không tự đọc Sheet** — GAS đọc & truyền `config_json` (giữ gateway là điểm chạm dữ liệu duy nhất). (2) Registry KHÔNG vào Dify — GAS chọn template ở `generate`. (3) Workflow **4 LLM + 2 Code** (gộp Extract+Normalize+Map) cho rẻ/nhanh; prompt đặt trong node v1 (config-driven hoàn toàn để sau). (4) Route suy bằng Code deterministic (khớp SELECTION_RULES R1–R99).
+- **Blocker:** **Dựng Dify Workflow** theo spec + đặt `DIFY_BASE_URL`/`DIFY_API_KEY` + xoá `DIFY_STUB` — việc [TT] trong Dify UI. `Process.gs`+`Dify.gs`+`SheetConfig.gs` mới cần **re-paste vào GAS** để có hiệu lực.
+- **Next step:** [TT] dựng workflow (`dify/WORKFLOW_SPEC.md`) → publish → lấy key → GAS Properties → tắt stub → test PDF thật. Re-paste 3 file GAS. [CC] hỗ trợ: DOCX generator đầy đủ (#13, điền template thật thay vì dựng lại từ segments); tinh chỉnh prompt/schema sau khi có kết quả thật.
+- **Regression risk:** thấp — `SheetConfig.gs` chỉ đọc Sheet; `Dify.gs` đổi inputs (chỉ ảnh hưởng khi tắt stub); FE không đổi.
+
+---
+
 ## ⭐ Tổng kết phiên 2026-08-18 #4 (Claude Code) — Wiring FE↔GAS live + verify
 - **Task completed:** [TT] deploy GAS Web App + tạo Sheet + Drive + upload template + đặt Script Properties (`CONFIG_SHEET_ID`, `DRIVE_ROOT_ID`, `DIFY_STUB=true`). [CC] nối FE: `config.js` → `GAS_WEB_APP_URL` (exec URL) + `USE_MOCK=false`. **Verify:** `GET ?action=ping` ✅ `{ok:true,service:...}`; `GET ?action=config` ✅ (đọc được Property, không còn "chưa đặt"). Phát hiện & sửa **bug** `handleConfig_` đọc sai tên tab (`TPB_VARIABLE_MAPPING`→`ND_VARIABLE_MAP`, cột tpb_var). Đọc Sheet qua Drive connector → xác nhận **8 tab mới có header, CHƯA import dữ liệu** (registry 285 dòng chưa nạp).
 - **Files changed:** *(chưa commit khi ghi)* `assets/js/config.js` (URL + USE_MOCK=false), `gas/Process.gs` (fix tên tab), `AI_CONTEXT/*`.

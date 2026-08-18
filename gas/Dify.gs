@@ -13,11 +13,13 @@ function callDify_(docId, extracted) {
   var key = SG.difyKey();
   if (!base || !key) throw err_('DIFY_TIMEOUT', 'Chưa cấu hình DIFY_BASE_URL/DIFY_API_KEY');
 
+  // GAS đọc Sheet config và truyền vào Dify (Dify không tự đọc Sheet).
+  var cfg = loadSheetConfig_();
   var payload = {
     inputs: {
       raw_text: extracted.raw_text,
       paragraphs_json: JSON.stringify(extracted.paragraphs || []),
-      config_ref: SG.configSheetId() ? ('sheet://' + SG.configSheetId()) : 'sheet://CONFIG',
+      config_json: JSON.stringify(cfg),
     },
     response_mode: 'blocking',
     user: 'sg-poc',
