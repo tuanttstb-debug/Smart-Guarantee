@@ -10,6 +10,7 @@ created: 2026-08-17
 updated: 2026-08-17
 version: 2
 source: https://github.com/tuanttstb-debug/Smart-Guarantee.git
+demo_url: https://tuanttstb-debug.github.io/Smart-Guarantee/
 ---
 
 > **Bản đã chốt phạm vi (2026-08-17, phiên 1).** Thay bản khởi tạo. Nguồn brief gốc: `Prompt mo dau.MD` / `Tổng quan.MD` (repo root). Các mục còn treo đánh dấu **[CHỜ NỘI DUNG]** — cần dữ liệu thực (danh mục biến ND, rule thời hạn, tập template chính thức, bộ test) chứ không phải chờ chốt kiến trúc.
