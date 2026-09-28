@@ -1,5 +1,8 @@
 # GOOGLE DRIVE STRUCTURE — Smart Guarantee
 
+> **ℹ️ v2 (2026-09-28):** cây Drive `INPUT · EXTRACTED · OUTPUT · TEMPLATE_GOC (BA sửa) · TEMPLATE (<mã mẫu>.docx máy sinh) · CONFIG (catalog.json, sg_goc.zip) · _TEMPLATE_CU_<ngày> (lưu trữ)`; bỏ LOGS (thay bằng Sheet AUDIT). Xem `gas/Store.gs`.
+
+
 > Storage của PoC. GAS đọc/ghi theo thư mục chức năng. Đặt dưới 1 thư mục gốc dự án (share cho tài khoản chạy GAS).
 
 ```

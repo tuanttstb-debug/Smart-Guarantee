@@ -1,72 +1,37 @@
-# PROJECT STATE — Smart Guarantee
+# PROJECT STATE — Smart Guarantee (snapshot)
 
-**Cập nhật:** 2026-08-17 · **Version:** 0.3.0 (nạp logic chọn mẫu thật) · **Repo:** https://github.com/tuanttstb-debug/Smart-Guarantee.git *(remote CHƯA tạo — xem Đang treo)*
+**Cập nhật:** 2026-09-28 · **Version:** 2.0.0 (đại tu: sinh thư theo mẫu thư viện, có xác thực, pilot) · **Repo:** https://github.com/tuanttstb-debug/Smart-Guarantee (CÔNG KHAI) · FE: https://tuanttstb-debug.github.io/Smart-Guarantee/
 
 ## Tóm tắt
-Đã **chốt phạm vi + kiến trúc** và **nạp logic chọn mẫu thật** từ `Tham khao/` (Logic hiển thị.xlsx + 96 template .docx). **Chưa có code.** Trọng tâm PoC = **segmentation khung/biến trên thư KH upload** → sinh thư sát thư KH (không chỉ chọn 1 template TPBank). Biến = placeholder `[...]`, không phải $ND.
+Công cụ nội bộ cho **cán bộ tác nghiệp BL**: tải thư KH → AI phân loại + bóc tách → chọn **mẫu thư viện TPBank** (168 mẫu) → rà soát → xuất .docx **đúng định dạng mẫu**. Mục tiêu hiện tại: **pilot vận hành thật trên hạ tầng hiện tại** (GAS + Drive + Dify Cloud), kiến trúc tách lớp để sau chuyển on-prem chỉ thay OCR/LLM.
 
-## Kiến trúc đã chốt
-- **FE:** HTML + Bootstrap, 5-tab tuyến tính, giữ nhận diện tím "TPBank BIZ" (bỏ dashboard). Xem `DESIGN_SYSTEM.md`.
-- **Gateway:** Google Apps Script (không xử lý AI). **AI:** Dify Workflow (classify 9 chiều → segment → extract → normalize → map placeholder → validate). **Config/DB:** Google Sheet (7 sheet). **Storage:** Google Drive (6 thư mục).
-- Docs: `SYSTEM_ARCHITECTURE` · `DATA_MODEL` · `TEMPLATE_SELECTION` · `VARIABLE_SEGMENTATION` · `TPB_VARIABLES` · `DIFY_WORKFLOW` · `API_CONTRACT` · `DRIVE_STRUCTURE` · `DOCX_GENERATOR`.
+## Quyết định 2026-09-28 (anh Tuân)
+1. Pilot trên hạ tầng hiện tại (Google + Dify Cloud + OpenAI) — không làm on-prem đợt này.
+2. Đầu ra **luôn là mẫu thư viện TPBank**; thư KH không khớp mẫu nào → cảnh báo, cán bộ chọn tay. (Bỏ route KH_UPLOAD "sát thư KH".)
+3. Phạm vi: cả 4 bộ — TPB · TT22 + TT07 · TT79 (B8ZB) · EVN + Viettel.
+4. Người dùng: cán bộ tác nghiệp BL, **có đăng nhập + lịch sử + audit**, không maker-checker trong app.
 
-## Đã có
-- Bộ context đầy đủ: 5 file lõi + `DESIGN_SYSTEM` + **8 doc thiết kế**.
-- **Nguồn tham khảo `Tham khao/`:** `Logic hiển thị.xlsx` (7 sheet: logic chọn mẫu 9 chiều, nhóm giao dịch, product, ma trận field theo loại BL) + **96 template .docx** (4 thư mục Độc lập/Liên danh × giấy/điện tử).
-- `CLAUDE.md` bootstrap. `git init` local, nhánh `main`.
-- Đăng ký AIOS registry: thẻ `PRJ-SG` (active), PORTFOLIO, INDEX, projects.json.
+## Kiến trúc v2
+- **Thư viện mẫu do nghiệp vụ tự vận hành** (quyết định 28/09 chiều): Drive `TEMPLATE_GOC/` = nơi DUY NHẤT sửa mẫu · tab **MAU_THU** = bảng mã hoá mẫu (mã ổn định `BLTU-T22-XL-LD-E`, khoá theo file ID, tự nạp từ tên file/thư mục, BA sửa được) · GAS `rebuildTemplates` (nút admin ⟳, trigger 2h) tự chuẩn hoá mẫu đã sửa, mẫu có chỗ trống lạ → ⚠ giữ bản cũ · tab SLOT_REVIEW cho BA rà. Chuẩn hoá: `gas/Normalize.gs` (2.366/2.366 chỗ trống, 0 sót; trùng 100% bản Python cũ). Hướng dẫn BA: `docs/QUAN_LY_MAU.md`.
+- **Sinh thư** = điền token trong XML docx (không qua Google Docs) → giữ 100% định dạng; ô thiếu tô vàng.
+- **Lõi dùng chung** `gas/Core.gs` (→ `assets/js/core.js`): 24 trường nguyên tử, 36 slot, đọc số thành chữ, chuẩn hoá tiền/ngày, kiểm số chữ trong thư ⇄ số, xếp hạng mẫu.
+- **AI**: Dify 1 node LLM, prompt ở `gas/Prompt.gs` (`v2.1-2026-09-28`). OCR: Drive convert (PDF text/scan, Word).
+- **Bảo mật/vận hành**: tài khoản ứng dụng (USERS, SHA-256+salt, khoá brute-force), phiên 6h, chủ hồ sơ mới xem/sinh được, AUDIT metadata, JOBS lịch sử, doc_id có khoá.
+- **FE** 3 bước: Tải thư → Rà soát & chọn mẫu (form theo trường mẫu cần, độ tin cậy, trích dẫn thư gốc, đổi mẫu) → Xem trước (tờ A4) & xuất (bắt xác nhận đối chiếu).
 
-## Phát hiện then chốt (từ scan Tham khao + B8ZB)
-- Chọn mẫu theo **9 chiều** (currency/goType/method/language/type/sector/validity/JV/contract-status) + circular & quy trình đấu thầu cho BLDT.
-- **6 loại BL** (thêm BLBH, BLKH). BYT = TT07/TT40; Bộ KH&ĐT = TT22/TT06-07.
-- **TT79 CÓ thật** — chỉ áp cho **BLDT** (mới nhất, chuyển Bộ KH&ĐT → **Bộ Tài chính**); loại khác giữ nguyên. *(Sửa bản trước ghi "không phải TT79".)*
-- **Hai hệ biến:** online B8ZB dùng `$ND` (MERGEFIELD, 15 biến — `TPB_VARIABLES.md`); offline/KH dùng `[...]`. PoC **hỗ trợ cả hai** theo route.
-- BLDT online (B8ZB) theo **vòng đời thông tư** TT06-07→TT22→TT40→**TT79**: classify cả 4, **sinh chỉ TT79**; archive/old-thô = active=false.
-- Case **"Mẫu KH up"** = case chính (segmentation khung/biến).
+## Kiểm thử (`bash tools/check.sh`)
+Mẫu strict ✓ · lõi 44/44 · **giả lập GAS e2e 55/55** (gồm vòng đời thư viện mẫu: chuyển đổi, sửa mẫu hợp lệ/lỗi, thêm file mới, tắt mẫu) · UI demo desktop+mobile ✓ · render Word thật ✓.
 
-## Hạ tầng / tài sản (đã xác nhận có sẵn — phiên 1)
-- ✅ **Dify** instance/account (+ API key). ✅ **Google Workspace** (Apps Script + Sheets + Drive).
-- ✅ **Template .docx TPBank** + (một phần) danh mục biến ND. ✅ **Bộ PDF mẫu** để test bóc tách.
+## Triển khai (28/09)
+Code đã đẩy lên project GAS `17xyUZ…` bằng clasp (18 file); bản cũ sao lưu `build/gas_backup_20260928/`. Deployment production `AKfycbxCBF…Z0` (@9) **chưa cập nhật** — chờ setupAll + Dify.
 
-## Đang treo
-- **Tạo GitHub remote** `Smart-Guarantee` → `git remote add origin … && git push -u origin main` (chỉ local).
-- **[CHỜ NỘI DUNG]** còn lại:
-  1. Rule thời hạn (validity 1–5) mô tả cách tính chi tiết.
-  2. Bộ test chính thức (thư KH vào + kết quả mong muốn: khung/biến + thư sinh) để đo accuracy/segmentation.
-  3. Canonical field đầy đủ + alias mở rộng (bổ sung dần).
+## Đang treo — [TT]
+1. **Triển khai v2**: upload `build/sg_goc.zip` vào Drive CONFIG → chạy `setupAll` (cấp quyền, lưu mật khẩu admin) → import Dify v2 + key → báo [CC] cập nhật deployment.
+2. Bộ **UAT 20 thư** + đáp án (`docs/UAT.md`) → đo KPI → [CC] tinh chỉnh prompt.
+3. Chốt chính sách lưu trữ Drive (đề xuất xoá INPUT/OUTPUT sau 90 ngày).
 
-## Nguồn dữ liệu / tích hợp
-- Google Sheet 6 sheet (config/metadata/KB) — `DATA_MODEL.md`.
-- Google Drive `/INPUT /OUTPUT /TEMPLATE /EXTRACTED /CONFIG /LOGS` — `DRIVE_STRUCTURE.md`.
-- Dify Workflow (LLM: Qwen/Gemini/GPT-4o/DeepSeek — chốt Phase 1–2).
-
-## Rủi ro / hiện tượng đã biết
-- LLM trả JSON không ổn định → ép JSON Schema (TD-SG-01).
-- Một field nhiều cách gọi → FIELD_ALIASES (TD-SG-02).
-- Template mới phát sinh → configuration-driven, không sửa code (TD-SG-03).
-- Segmentation sai ranh giới khung/biến (thư KH lệch corpus) → fuzzy match + user review (TD-SG-04).
-- Repo chưa có remote → chưa backup cloud.
-
-## Delta (2026-08-18 #3 — Registry + config)
-**Config layer đầu tiên.** `tools/build-registry.js` sinh `config/TEMPLATE_REGISTRY.csv` từ corpus thật (285 mẫu; active=168 = 96 offline + 72 TT79; các circular cũ active=false; archive loại) + 7 CSV seed (`CANONICAL_FIELDS/FIELD_ALIASES/PLACEHOLDER_MAP/ND_VARIABLE_MAP/SELECTION_RULES/FIELD_REQUIREMENTS/PROMPTS`). `gas/Setup.gs` (`setupDrive`+`setupConfigSheet`) + `config/README.md` cho [TT] dựng Google Sheet + cây Drive + upload template. Registry **tự sinh** (chạy lại khi corpus đổi). Chưa nối runtime (cần [TT] import Sheet + đặt `CONFIG_SHEET_ID`/`DRIVE_ROOT_ID` + dựng Dify). Regression risk = không. Kế tiếp: Dify Workflow (mắt xích lớn còn lại).
-
-## Delta (2026-08-18 #4 — 🎉 THÔNG LUỒNG end-to-end)
-**PoC chạy thật end-to-end.** FE → GAS (OCR-extract qua Drive REST) → Dify (4 LLM, model GPT-5.4-mini) → GAS (suy route + parse + assemble) → FE 5 tab → generate DOCX. Đã qua UAT thật với `Test/IB2600452376.pdf`. **Kiến trúc chốt sau debug:** Dify **LLM-only** (bỏ code node vì sandbox 429), GAS làm orchestration (route deterministic `routeFromClassification_` + parse JSON + assemble); convert file qua **Drive REST** (UrlFetch, không cần Advanced Drive Service); `DIFY_BASE_URL` chuẩn hoá về host. Tất cả thành phần **live**. **Giai đoạn kế: tuning chất lượng** (chưa đo KPI). Commits `fc1775f`→`b37793c`. Regression risk trung bình (luồng chạy, chưa đo độ chính xác).
-
-## Delta (2026-08-18 #2 — GAS gateway)
-**Backend gateway đầu tiên.** `gas/` — 8 `.gs` + `appsscript.json` + README. Router `?action=upload|process|generate|config|ping`; `upload`→`/INPUT`; `process` = bóc text (Drive OCR, `Text.gs`) → Dify `/v1/workflows/run` blocking (`Dify.gs`, chuẩn hoá output theo `API_CONTRACT`) → lưu `/EXTRACTED` → trả FE; `generate` PoC dựng lại từ `segments` → `.docx` thật ở `/OUTPUT`. Secret ở Script Properties; `DIFY_STUB` test không cần Dify. FE `api.js` chuyển POST `text/plain` (né CORS preflight). Syntax 8/8 OK; **chưa deploy** (cần [TT] tạo GAS project + Web App URL + Dify Workflow thật). Regression risk = không (code mới, chưa deploy).
-
-## Delta (2026-08-18 — FE scaffold)
-**Có code đầu tiên.** FE scaffold Bootstrap 5-tab (Phase 1 #5): `index.html` + `assets/css/theme.css` + `assets/js/{config,mock,api,app}.js`. Luồng Upload→Phân loại→Dữ liệu→Biến&Khung→Xuất chạy được **bằng mock** (`mock.js` khớp `API_CONTRACT.md`); `api.js` gọi GAS thật khi `USE_MOCK=false` + có URL. Nhận diện tím `#7B2CBF`, edit field + highlight confidence <80%, segmentation realtime. Verify Chrome chưa chạy (extension chưa kết nối) → mở trình duyệt mặc định để [TT] xem. Chưa commit. Regression risk = không (file mới độc lập). Kế tiếp: GAS gateway (#6–7) hoặc Phase 0 (#3–4).
-
-## Delta (2026-08-17 — kết phiên)
-Bộ context thiết kế hoàn chỉnh (15 doc) + đồng bộ AIOS hub v4; commit & push lên remote `Smart-Guarantee`. Sẵn sàng **Phase 0** (build REGISTRY/ND_MAP/PLACEHOLDER_MAP + Sheet + Drive). Chi tiết 6 trường: `SESSION_HANDOVER.md` (mục ⭐ tổng kết). Chưa có code → regression risk = không.
-
-## Delta (2026-08-17 — nạp bộ BLDT online B8ZB)
-Scan `Tham khao/B8ZB/` (221 file BLDT online theo vòng đời thông tư). Phát hiện **hệ biến $ND thứ 2** (MERGEFIELD, 15 biến) song song `[...]`. Chốt: **hỗ trợ cả hai** theo route (ONLINE_B8ZB/OFFLINE/KH_UPLOAD); classify cả 4 circular, **sinh chỉ TT79**; archive=false. Đính chính: **TT79 có thật, chỉ áp BLDT** (Bộ Tài chính). Tạo `TPB_VARIABLES.md`; cập nhật TEMPLATE_SELECTION (+§7 B8ZB), DATA_MODEL (+dim 10/11, +ND_VARIABLE_MAP), DIFY/DOCX/API/OVERVIEW/SEGMENTATION.
-
-## Delta (2026-08-17 — nạp logic chọn mẫu thật)
-Scan `Tham khao/`: parse `Logic hiển thị.xlsx` (7 sheet) + 96 template .docx. Chốt trọng tâm PoC = **segmentation khung/biến trên thư KH upload**; biến = placeholder `[...]` (bỏ $ND); scope = **Phát hành**. Sửa mô hình: 9 chiều, 6 loại BL, TT22/07/40. Tạo 2 doc mới (`TEMPLATE_SELECTION`, `VARIABLE_SEGMENTATION`); cập nhật OVERVIEW/DATA_MODEL/DIFY_WORKFLOW/DOCX_GENERATOR/API_CONTRACT/SYSTEM_ARCHITECTURE. Chưa có code.
-
-## Delta (2026-08-17 — chốt phạm vi phiên 1)
-Nạp brief, chốt phạm vi + kiến trúc (FE Bootstrap + GAS gateway + Dify Workflow + Sheet config + Drive storage). Viết đầy đủ bộ context thiết kế; rewrite OVERVIEW/DESIGN_SYSTEM; xác nhận hạ tầng có sẵn.
+## Rủi ro đã biết
+- Chưa chạy với LLM thật sau đại tu (prompt mới) — độ chính xác bóc tách chưa đo (UAT).
+- OCR Drive với PDF scan chất lượng thấp (TD-SG-10).
+- Dify Cloud / OpenAI xử lý thư KH thật — chấp nhận cho pilot, cần phê duyệt trước khi mở rộng (TD-SG-11).
+- GAS UrlFetch ~60s/lần gọi: thư rất dài + model chậm có thể timeout (đã thử lại 1 lần).

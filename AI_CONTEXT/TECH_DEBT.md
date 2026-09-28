@@ -4,7 +4,18 @@ Nợ kỹ thuật & rủi ro thiết kế đã biết. Mới nhất trên cùng.
 
 > **Delta (2026-08-18 #4 — thông luồng):** phát sinh/khép nợ khi tích hợp thật (TD-SG-05..09). Đã giải quyết: TD-SG-05 (Drive Advanced Service), TD-SG-07 (Dify base URL), TD-SG-08 (sandbox 429). Còn mở: TD-SG-06 ($ND field-code), TD-SG-09 (template trùng tên). TD-SG-01 (JSON ổn định) hiện xử lý ở GAS (`normalizeDify_` strip fences + parse an toàn) thay vì ép JSON Schema ở Dify.
 
-## TD-SG-09 — Template trùng tên giấy/điện tử khi upload phẳng /TEMPLATE (2026-08-18) · MỞ
+> **Delta (2026-09-28 — v2):** ĐÃ XỬ LÝ: TD-SG-06 ($ND field-code → gỡ MERGEFIELD khi chuẩn hoá mẫu), TD-SG-09 (mẫu lưu theo template_id), TD-SG-01 (parse JSON chịu lỗi + ép enum ở Extract.gs), TD-SG-02/04 (bỏ segmentation/alias — điền theo slot ngữ cảnh). Mở mới TD-SG-10..12.
+
+## TD-SG-12 — Luật gắn slot là regex theo ngữ cảnh (2026-09-28) · MỞ
+**Hiện tượng:** mẫu mới có cách viết chỗ trống lạ → MAU_THU báo ⚠ (giữ bản cũ). **Hướng:** BA viết chỗ trống theo cách có sẵn, hoặc [CC] thêm luật vào `gas/Normalize.gs::RULES` (chạy `node tools/normalize.js --strict` + e2e rồi `clasp push`); nghiệp vụ rà tab SLOT_REVIEW. · **Ưu tiên:** trung bình.
+
+## TD-SG-11 — Thư KH thật đi qua Dify Cloud/OpenAI (2026-09-28) · MỞ (chấp nhận cho pilot)
+**Hướng:** trước khi mở rộng ngoài nhóm pilot cần phê duyệt ANTT/pháp chế hoặc chuyển LLM nội bộ (chỉ thay `Extract.gs`). · **Ưu tiên:** cao khi mở rộng.
+
+## TD-SG-10 — OCR PDF scan dùng Drive convert (2026-09-28) · MỞ
+**Hiện tượng:** scan mờ/nghiêng → lỗi chữ, AI bóc sai. **Hướng:** đo trong UAT; nếu kém → gửi ảnh trang cho LLM vision (Dify file input) — điểm swap `Text.gs`. · **Ưu tiên:** trung bình.
+
+## TD-SG-09 — Template trùng tên giấy/điện tử khi upload phẳng /TEMPLATE (2026-08-18) · ĐÃ XỬ LÝ (v2)
 **Hiện tượng:** offline giấy vs điện tử cùng tên file (khác method) → upload phẳng vào `/TEMPLATE` bị đè/nhập nhằng; `Generate.gs::findFile_` lấy file đầu.
 **Hướng trả nợ:** namespace theo method khi upload (thư mục con), hoặc thêm hậu tố; hoặc `selectTemplate_` ưu tiên method. · **Ưu tiên:** trung bình (nội dung 2 bản gần giống, chấp nhận PoC).
 
@@ -16,7 +27,7 @@ Nợ kỹ thuật & rủi ro thiết kế đã biết. Mới nhất trên cùng.
 **Hiện tượng:** `DIFY_TIMEOUT 404` do property đặt cả path `/v1/workflows/run` → double path.
 **Xử lý:** `Config.gs::difyBaseUrl` chuẩn hoá về host gốc (strip `/v1[/workflows/run]` + `/` cuối). Chấp nhận mọi dạng.
 
-## TD-SG-06 — `$ND` MERGEFIELD có thể là field-code (2026-08-18) · MỞ
+## TD-SG-06 — `$ND` MERGEFIELD có thể là field-code (2026-08-18) · ĐÃ XỬ LÝ (v2)
 **Hiện tượng (dự kiến):** route ONLINE_B8ZB — nếu template lưu `$ND` là Word field-code (không phải text `«$ND»`), `Generate.gs::replaceLiteral_` không thay được → biến còn sót.
 **Hướng trả nợ:** nếu gặp khi test route ONLINE thật → thao tác OOXML (mở .docx như zip, sửa `word/document.xml`). Hiện `Generate.gs` thử cả `«$ND»` và `$ND` literal. · **Ưu tiên:** cao khi demo BLDT online. **Chưa test template B8ZB thật.**
 

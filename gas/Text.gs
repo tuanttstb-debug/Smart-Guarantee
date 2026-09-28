@@ -1,38 +1,24 @@
 /**
- * Text.gs — bóc text từ file /INPUT (DIFY_WORKFLOW Step 1).
+ * Text.gs — bóc text từ thư KH trong /INPUT.
  *
- * PoC: dùng Drive OCR conversion (PDF/Word → Google Doc) rồi đọc body →
- * { raw_text, paragraphs }. Xử lý được cả PDF text lẫn scan. Đây là **điểm
- * swap duy nhất**: nếu chuyển bóc text sang node pdfplumber trong Dify thì chỉ
- * đổi hàm này (gửi file thay vì raw_text) — xem gas/README.md §Extraction.
+ * Dùng chuyển đổi Drive (PDF/Word → Google Doc, có OCR cho PDF scan) rồi đọc body.
+ * Xử lý được cả PDF có lớp chữ, PDF scan/ảnh chụp và Word. Đây là ĐIỂM SWAP duy nhất
+ * nếu sau này chuyển sang OCR/vision nội bộ (chỉ đổi hàm này).
  */
 function extractText_(docId) {
   var file = inputFileFor_(docId);
-  if (!file) throw err_('PARSE_ERROR', 'Không thấy file INPUT cho ' + docId);
+  if (!file) throw err_('NOT_FOUND', 'Không thấy file gốc cho ' + docId);
 
   var tempDocId = null;
   try {
-    // Convert sang Google Doc (OCR) qua Drive REST (Convert.gs) — không cần Advanced Service.
-    tempDocId = docxToGdoc_(file.getBlob(), docId + '__tmp');
-
-    var doc = DocumentApp.openById(tempDocId);
-    var raw = doc.getBody().getText() || '';
-    var paragraphs = raw.split(/\n+/).map(function (s) { return s.trim(); })
-      .filter(function (s) { return s.length > 0; });
-
-    logLine_('extract doc_id=' + docId + ' chars=' + raw.length + ' paras=' + paragraphs.length);
-    return { raw_text: raw, paragraphs: paragraphs };
+    tempDocId = docxToGdoc_(file.getBlob(), docId + '__ocr');
+    var raw = DocumentApp.openById(tempDocId).getBody().getText() || '';
+    raw = raw.replace(/\r/g, '').replace(/[ \t ]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    if (raw.length < 80) {
+      throw err_('PARSE_ERROR', 'Không đọc được nội dung thư (ảnh quá mờ hoặc tệp rỗng). Hãy dùng bản PDF rõ hơn.');
+    }
+    return raw.slice(0, SG.MAX_TEXT_CHARS);
   } finally {
     if (tempDocId) { try { DriveApp.getFileById(tempDocId).setTrashed(true); } catch (_) {} }
   }
-}
-
-/** Tìm file INPUT theo doc_id với đuôi pdf/docx/doc. */
-function inputFileFor_(docId) {
-  var exts = ['pdf', 'docx', 'doc'];
-  for (var i = 0; i < exts.length; i++) {
-    var f = findFile_('INPUT', docId + '.' + exts[i]);
-    if (f) return f;
-  }
-  return null;
 }

@@ -1,0 +1,6 @@
+{
+  "name": "sg-gas-sim",
+  "private": true,
+  "description": "Giả lập Google Apps Script để test tích hợp backend Smart Guarantee trên Node (dev only).",
+  "dependencies": { "adm-zip": "^0.5.16" }
+}

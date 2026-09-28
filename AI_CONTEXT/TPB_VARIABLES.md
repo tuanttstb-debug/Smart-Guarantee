@@ -1,5 +1,8 @@
 # TPB VARIABLES ($ND) — Danh mục biến hệ Online (B8ZB)
 
+> **ℹ️ v2 (2026-09-28):** `$ND/$TPB/$KH/OF_PROJECT_NAME` được chuyển thành slot khi chuẩn hoá mẫu (`gas/Normalize.gs` RULES).
+
+
 > Nguồn: template **online B8ZB** (`Tham khao/B8ZB/`, 221 file) — dùng **Word MERGEFIELD** `«$NDxxx»` (hệ thống điền tự động). Đây là hệ biến **thứ 2** song song với placeholder `[...]` của mẫu offline/KH (xem `VARIABLE_SEGMENTATION.md`). PoC hỗ trợ **cả hai** (route ONLINE dùng $ND, route OFFLINE/KH_UP dùng `[...]`).
 
 ## Prefix

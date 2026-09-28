@@ -1,52 +1,37 @@
-# UAT & Demo Runbook — Smart Guarantee (Phase 4)
+# UAT pilot — Smart Guarantee v2
 
-> Nghiệm thu PoC + đo KPI. Chạy sau khi **Dify Workflow** đã dựng và `DIFY_STUB` đã tắt. KPI mục tiêu: `AI_CONTEXT/PROJECT_OVERVIEW.md`.
+> Mục tiêu: xác nhận đủ điều kiện dùng thật cho nhóm cán bộ tác nghiệp BL. Chạy sau khi hoàn tất `gas/README.md` §Triển khai và `checkSetup` toàn ✓.
 
-## 1. Điều kiện tiên quyết
-- [ ] GAS Web App live; Script Properties `DIFY_BASE_URL`/`DIFY_API_KEY` đặt, `DIFY_STUB` **đã xoá**.
-- [ ] Sheet 8 tab đã import (đặc biệt `TEMPLATE_REGISTRY` 285 dòng); `CONFIG_SHEET_ID` đặt.
-- [ ] Drive `/TEMPLATE` đã upload template active (96 offline + 72 TT79), tên khớp `template_file`.
-- [ ] FE `config.js`: `USE_MOCK:false`.
+## 1. Kiểm thử tự động (đã có — chạy trước mỗi lần deploy)
+`bash tools/check.sh`: mẫu strict (0 chỗ trống sót / 168 mẫu) · lõi 44 ca · giả lập GAS e2e 41 ca (auth, phân quyền, upload, process, generate, lịch sử, brute-force, LLM lỗi) · UI demo desktop + mobile.
 
-## 2. Bộ dữ liệu demo (cần [TT] chuẩn bị)
-Mỗi ca test = **1 thư KH đầu vào (PDF/Word)** + **kết quả mong muốn** (khung/biến + thư sinh) để đối chiếu.
-Bao phủ tối thiểu:
+## 2. Bộ thư UAT (nghiệp vụ chuẩn bị — lưu `Test/`, KHÔNG commit)
+Tối thiểu **20 thư thật đã che/được phép dùng**, phủ:
 
-| # | Loại BL | Bộ mẫu | Route kỳ vọng | Ghi chú |
-|---|---|---|---|---|
-| T1 | BLTH | TT22 (HH) | OFFLINE | mẫu chuẩn `[...]` |
-| T2 | BLDT | — (online) | ONLINE_B8ZB | sinh theo TT79, `$ND` |
-| T3 | BLBH | TPB | OFFLINE | |
-| T4 | BLTU | EVN/VIT | OFFLINE | validity 1–5 |
-| T5 | (bất kỳ) | mẫu KH tự do / NGT / song ngữ | KH_UPLOAD | **case lõi** — segmentation khung/biến |
-| T6 | BLTH | liên danh (LD) | OFFLINE | prefix LD_, JOINT_VENTURE_INFO |
+| Nhóm | Số thư | Lưu ý |
+|---|---|---|
+| BLDT TT79 (1 túi / 2 túi, độc lập / liên danh) | 4 | kiểm `$ND` → bên thụ hưởng, E-TBMT, thời hạn hiệu lực |
+| BLTH / BLTU / BLBH TT22 (HH, XL, PTV, TBYT) | 6 | tạm ứng: 2 số tiền khác nhau |
+| TT07 Bộ Y tế (dược liệu, mua thuốc 1/lô thụ hưởng) | 2 | |
+| EVN, Viettel | 3 | |
+| Mẫu TPB (BLTH/BLTU/BLBH/BLTT) | 3 | BLTU thời hạn 1+2 vs 5 |
+| PDF scan / ảnh chụp | 2 | chất lượng OCR |
 
-## 3. Quy trình test 1 ca (qua FE)
-1. Tab **Upload** → chọn thư KH → **Phân tích**.
-2. Tab **Phân loại**: đối chiếu 9 chiều + **route** với kỳ vọng.
-3. Tab **Dữ liệu**: kiểm giá trị field; sửa các field confidence thấp (highlight vàng).
-4. Tab **Biến & Khung**: kiểm ranh giới KHUNG vs BIEN (đúng chỗ cần điền?).
-5. Tab **Xuất**: **Sinh thư** → tải `.docx` → mở, đối chiếu "sát thư KH"; kiểm cảnh báo biến sót (⚠).
+Mỗi thư ghi **đáp án**: mẫu đúng (template_id) + giá trị đúng các trường.
 
-## 4. Bảng đo KPI
-| KPI | Cách đo | Mục tiêu | Kết quả |
-|---|---|---|---|
-| Classification | # chiều đúng / tổng, trên bộ test | ≥95% | |
-| Segmentation (khung/biến) | # span đúng loại / tổng | cao (giá trị lõi) | |
-| Field Extraction | # field đúng / tổng field áp dụng | 90–95% | |
-| Placeholder/ND Mapping | # biến map đúng / tổng | ≥95% | |
-| Reproduction | thư sinh chạy được + sát thư KH (định tính) | 100% chạy được | |
-| Giảm nhập tay | ước lượng field auto-fill / tổng field | >70% | |
+## 3. KPI chấp nhận pilot
+| KPI | Cách đo | Ngưỡng |
+|---|---|---|
+| Chọn đúng mẫu ở top-1 | template_id đề xuất = đáp án | ≥ 85% (top-3 ≥ 95%) |
+| Trường đúng không phải sửa | trường đúng / trường mẫu cần | ≥ 90% |
+| Thư xuất đúng định dạng mẫu | mở Word, so mẫu gốc | 100% |
+| Không có số liệu sai lọt qua | số tiền/ngày sai mà không bị cảnh báo | 0 |
+| Thời gian xử lý / thư | upload → xuất | ≤ 3 phút (so ~15–20 phút thủ công) |
 
-## 5. Ghi nhận & tinh chỉnh (không sửa code)
-Lỗi phân loại/segmentation/mapping → tinh chỉnh **trong Google Sheet**:
-- Sai alias → thêm dòng `FIELD_ALIASES`.
-- Sai placeholder/$ND → sửa `PLACEHOLDER_MAP` / `ND_VARIABLE_MAP`.
-- Sai route → chỉnh `SELECTION_RULES`.
-- LLM lệch → sửa prompt trong tab `PROMPTS` (hoặc node Dify).
-- Template mới → thêm vào `/TEMPLATE` + chạy lại `tools/build-registry.js` (nếu offline/B8ZB) → re-import `TEMPLATE_REGISTRY`.
+Ghi kết quả từng thư vào bảng (cột: file · mẫu đề xuất · đúng? · số trường sửa · lỗi · thời gian). Trường sai lặp lại → sửa `gas/Prompt.gs` (tăng `PROMPT_VERSION`), chạy lại cả bộ.
 
-## 6. Rủi ro cần theo dõi khi test thật
-- **`$ND` MERGEFIELD** (route ONLINE_B8ZB): nếu template lưu `$ND` là **field-code** (không phải text `«$ND»`), `replaceText` không bắt → biến còn sót. Nếu gặp → báo [CC] chuyển sang thao tác OOXML (sửa XML trong .docx).
-- **Trùng tên template** giấy/điện tử khi upload phẳng vào `/TEMPLATE` → generate lấy file đầu; kiểm nội dung đúng phương thức.
-- **process** blocking > vài phút (thư dài + Dify chậm) có thể chạm giới hạn ~6 phút/execution GAS.
+## 4. Kiểm soát vận hành cần xác nhận
+- [ ] Tài khoản riêng từng cán bộ; không dùng chung. Admin rà AUDIT hằng tuần.
+- [ ] Cán bộ tích "Tôi đã đối chiếu…" trước khi xuất; thư còn ô vàng không được ký/phát hành.
+- [ ] Thư xuất vẫn qua quy trình kiểm soát/ký hiện hành (công cụ hỗ trợ soạn, không thay thẩm quyền phê duyệt).
+- [ ] Chính sách lưu trữ Drive INPUT/OUTPUT (đề xuất xoá sau 90 ngày) — cần chốt.

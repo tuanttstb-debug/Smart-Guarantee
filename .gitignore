@@ -1,0 +1,16 @@
+# Phiếu đăng ký sáng kiến (chứa PII Mã CBNV) — không đẩy GitHub (data-boundary)
+Innovation_*.docx
+
+# Repo CÔNG KHAI → không đưa thư KH, mẫu nội bộ TPBank, sản phẩm build lên GitHub
+Test/
+Tham khao/
+build/
+*.docx
+*.pdf
+~$*
+
+# Dev tooling
+tools/gas-sim/node_modules/
+tools/gas-sim/package-lock.json
+gas/.clasp.json
+.clasprc.json

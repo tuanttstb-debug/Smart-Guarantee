@@ -1,29 +1,39 @@
 /**
- * Upload.gs — action=upload (API_CONTRACT §upload).
- * Nhận PDF/Word (base64) → lưu /INPUT/<doc_id>.<ext> → trả doc_id.
- *
- * Request:  { filename, content_base64 }
- * Response: { ok, doc_id, input_path }
+ * Upload.gs — action=upload.
+ * Request:  { token, filename, content_base64 }
+ * Response: { ok, doc_id }
  */
-function handleUpload_(body) {
-  var filename = body.filename || '';
+var UPLOAD_MIME = {
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  doc: 'application/msword',
+};
+
+function handleUpload_(body, user) {
+  var filename = String(body.filename || '').slice(0, 200);
   var b64 = body.content_base64 || '';
-  if (!b64) throw err_('PARSE_ERROR', 'Thiếu content_base64');
+  if (!b64) throw err_('PARSE_ERROR', 'Thiếu nội dung tệp');
+  var ext = (filename.split('.').pop() || '').toLowerCase();
+  if (!UPLOAD_MIME[ext]) throw err_('PARSE_ERROR', 'Định dạng không hỗ trợ: .' + ext + ' (chỉ PDF/DOC/DOCX)');
 
-  var ext = (filename.split('.').pop() || 'pdf').toLowerCase();
-  if (['pdf', 'doc', 'docx'].indexOf(ext) === -1) {
-    throw err_('PARSE_ERROR', 'Định dạng không hỗ trợ: .' + ext);
-  }
-
-  var mime = ext === 'pdf' ? 'application/pdf'
-    : ext === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    : 'application/msword';
+  var bytes = Utilities.base64Decode(b64);
+  if (bytes.length > SG.MAX_UPLOAD_MB * 1048576) throw err_('PARSE_ERROR', 'Tệp vượt quá ' + SG.MAX_UPLOAD_MB + ' MB');
+  var head = String.fromCharCode.apply(null, bytes.slice(0, 4).map(function (b) { return b & 0xff; }));
+  if (ext === 'pdf' && head !== '%PDF') throw err_('PARSE_ERROR', 'Tệp không phải PDF hợp lệ');
+  if (ext === 'docx' && head.slice(0, 2) !== 'PK') throw err_('PARSE_ERROR', 'Tệp không phải DOCX hợp lệ');
 
   var docId = nextDocId_();
-  var bytes = Utilities.base64Decode(b64);
-  var blob = Utilities.newBlob(bytes, mime, docId + '.' + ext);
-  saveBlob_('INPUT', docId + '.' + ext, blob);
+  saveBlob_('INPUT', docId + '.' + ext, Utilities.newBlob(bytes, UPLOAD_MIME[ext], docId + '.' + ext));
+  upsertJob_(docId, { username: user.username, file_name: filename, status: 'UPLOADED' });
+  return { ok: true, doc_id: docId };
+}
 
-  logLine_('upload doc_id=' + docId + ' ext=' + ext + ' bytes=' + bytes.length);
-  return { ok: true, doc_id: docId, input_path: '/INPUT/' + docId + '.' + ext };
+/** File INPUT theo doc_id. */
+function inputFileFor_(docId) {
+  var exts = Object.keys(UPLOAD_MIME);
+  for (var i = 0; i < exts.length; i++) {
+    var f = findFile_('INPUT', docId + '.' + exts[i]);
+    if (f) return f;
+  }
+  return null;
 }

@@ -13,6 +13,8 @@ source: https://github.com/tuanttstb-debug/Smart-Guarantee.git
 demo_url: https://tuanttstb-debug.github.io/Smart-Guarantee/
 ---
 
+> **⚠️ v2 (2026-09-28) thay đổi phạm vi:** mục tiêu = **pilot vận hành thật** cho cán bộ tác nghiệp BL; đầu ra **luôn là mẫu thư viện TPBank** (bỏ trọng tâm "segmentation khung/biến / thư sát thư KH"). Trạng thái hiện hành: `PROJECT_STATE.md`.
+
 > **Bản đã chốt phạm vi (2026-08-17, phiên 1).** Thay bản khởi tạo. Nguồn brief gốc: `Prompt mo dau.MD` / `Tổng quan.MD` (repo root). Các mục còn treo đánh dấu **[CHỜ NỘI DUNG]** — cần dữ liệu thực (danh mục biến ND, rule thời hạn, tập template chính thức, bộ test) chứ không phải chờ chốt kiến trúc.
 
 ## Tóm tắt điều hành

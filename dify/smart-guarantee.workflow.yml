@@ -1,19 +1,19 @@
-# Smart Guarantee — Dify Workflow DSL (import-ready, LLM-only)
-# Import: Dify Studio ▸ Import DSL ▸ upload. Sau import:
-#   1) Đổi model mỗi node LLM sang provider đã cấu hình (đang để openai/gpt-4o placeholder).
-#   2) Publish ▸ lấy API key + Base URL → GAS Script Properties DIFY_BASE_URL / DIFY_API_KEY,
-#      xoá DIFY_STUB. (DIFY_BASE_URL = host gốc, vd https://api.dify.ai)
+# Smart Guarantee — Dify Workflow DSL v2 (import-ready)
 #
-# ⚠️ KHÔNG dùng Code node (tránh sandbox 429 của Dify Cloud). Chỉ 4 LLM node.
-# GAS (Dify.gs::normalizeDify_) tự suy ROUTE + parse JSON + assemble → API_CONTRACT.
-# Luồng: start → classify → segment → extract → validate → end
-# Mỗi LLM trả JSON (text). End xuất 4 output text: classification/segments/variables/validation.
+# Thiết kế v2: Dify chỉ là PROXY LLM. Prompt nằm trong repo (gas/Prompt.gs, có version) và được GAS
+# truyền vào input `system_prompt` → đổi prompt không cần sửa Dify. 1 node LLM (thay 4 node v1):
+# nhanh hơn, rẻ hơn, ít điểm hỏng. Không dùng Code node (tránh sandbox 429 — TD-SG-08).
+#
+# Sau import: (1) chọn lại model ở node "LLM Extract" (khuyến nghị GPT-5.4-mini hoặc tương đương,
+# temperature 0, bật JSON mode nếu provider hỗ trợ) → (2) Publish → (3) API Access: lấy key app-xxx
+# → GAS Script Properties DIFY_API_KEY (DIFY_BASE_URL giữ nguyên), xoá DIFY_STUB.
+# Output: `result` = JSON text đúng schema Prompt.gs (GAS parse + kiểm enum ở Extract.gs).
 app:
-  description: "PoC TPBank — classify/segment/extract/validate thư bảo lãnh (LLM-only)."
+  description: "TPBank — phân loại + bóc tách thư bảo lãnh (v2, prompt do GAS truyền vào)."
   icon: "🛡️"
   icon_background: "#7B2CBF"
   mode: workflow
-  name: "Smart Guarantee"
+  name: "Smart Guarantee v2"
 kind: app
 version: 0.1.5
 workflow:
@@ -34,36 +34,15 @@ workflow:
       enabled: false
   graph:
     edges:
-      - id: e-start-classify
+      - id: e-start-llm
         source: start
-        target: classify
+        target: llm
         sourceHandle: source
         targetHandle: target
         type: custom
         data: { sourceType: start, targetType: llm, isInIteration: false }
-      - id: e-classify-segment
-        source: classify
-        target: segment
-        sourceHandle: source
-        targetHandle: target
-        type: custom
-        data: { sourceType: llm, targetType: llm, isInIteration: false }
-      - id: e-segment-extract
-        source: segment
-        target: extract
-        sourceHandle: source
-        targetHandle: target
-        type: custom
-        data: { sourceType: llm, targetType: llm, isInIteration: false }
-      - id: e-extract-validate
-        source: extract
-        target: validate
-        sourceHandle: source
-        targetHandle: target
-        type: custom
-        data: { sourceType: llm, targetType: llm, isInIteration: false }
-      - id: e-validate-end
-        source: validate
+      - id: e-llm-end
+        source: llm
         target: end
         sourceHandle: source
         targetHandle: target
@@ -78,33 +57,34 @@ workflow:
           title: "Start"
           desc: "Inputs từ GAS gateway"
           variables:
+            - variable: system_prompt
+              label: system_prompt
+              type: paragraph
+              required: true
+              max_length: 20000
             - variable: raw_text
               label: raw_text
               type: paragraph
               required: true
-              max_length: 48000
-            - variable: paragraphs_json
-              label: paragraphs_json
-              type: paragraph
+              max_length: 60000
+            - variable: today
+              label: today
+              type: text-input
               required: false
-              max_length: 48000
-            - variable: config_json
-              label: config_json
-              type: paragraph
-              required: false
-              max_length: 48000
-      - id: classify
+              max_length: 20
+      - id: llm
         type: custom
-        position: { x: 340, y: 300 }
+        position: { x: 360, y: 300 }
         data:
           type: llm
-          title: "LLM1 Classify"
+          title: "LLM Extract"
           model:
             provider: openai
-            name: gpt-4o
+            name: gpt-4o-mini
             mode: chat
             completion_params:
               temperature: 0
+              response_format: json_object
           context:
             enabled: false
             variable_selector: []
@@ -112,120 +92,20 @@ workflow:
             enabled: false
           prompt_template:
             - role: system
-              text: |
-                Bạn là chuyên gia nghiệp vụ bảo lãnh ngân hàng TPBank. Phân loại thư bảo lãnh theo các chiều.
-                Chỉ trả JSON đúng schema (không markdown, không giải thích). Mã hợp lệ:
-                guarantee_type ∈ [BLDT,BLBH,BLTH,BLTU,BLTT,BLKH]; method ∈ [TG,ĐT,SW]; language ∈ [TV,TA,SN,KH]
-                template_type ∈ [TPB,T22,T07,T40,EVN,VIT,MK]; currency ∈ [VND,NGT]
-                Nếu guarantee_type=BLDT thêm circular ∈ [TT06-07,TT22,TT40,TT79] và envelope. Trường không xác định để "".
-                Schema: {"currency","guarantee_type","method","language","template_type","sector","validity_type","joint_venture","contract_status","circular","envelope"}
+              text: "{{#start.system_prompt#}}"
             - role: user
               text: |
-                Nội dung thư:
+                Ngày hôm nay: {{#start.today#}}
+                ===== VĂN BẢN THƯ (OCR) =====
                 {{#start.raw_text#}}
-      - id: segment
-        type: custom
-        position: { x: 640, y: 300 }
-        data:
-          type: llm
-          title: "LLM2 Segment"
-          model:
-            provider: openai
-            name: gpt-4o
-            mode: chat
-            completion_params:
-              temperature: 0
-          context:
-            enabled: false
-            variable_selector: []
-          vision:
-            enabled: false
-          prompt_template:
-            - role: system
-              text: |
-                Phân đoạn thư bảo lãnh thành KHUNG (văn bản mẫu cố định) và BIEN (chỗ cần điền: tên, số tiền,
-                ngày, địa chỉ, tên gói thầu, số hợp đồng...). Giữ NGUYÊN VĂN và ĐẦY ĐỦ, đúng thứ tự.
-                Mỗi BIEN đoán field_guess theo canonical_fields trong config. Chỉ trả JSON (không markdown).
-                Schema: {"segments":[{"text","kind":"KHUNG"|"BIEN","field_guess","confidence":0-100}]}
-            - role: user
-              text: |
-                config: {{#start.config_json#}}
-                ---
-                thư:
-                {{#start.raw_text#}}
-      - id: extract
-        type: custom
-        position: { x: 940, y: 300 }
-        data:
-          type: llm
-          title: "LLM3 Extract+Map"
-          model:
-            provider: openai
-            name: gpt-4o
-            mode: chat
-            completion_params:
-              temperature: 0
-          context:
-            enabled: false
-            variable_selector: []
-          vision:
-            enabled: false
-          prompt_template:
-            - role: system
-              text: |
-                Từ thư và danh sách BIEN, trích giá trị từng field áp dụng cho loại bảo lãnh (dùng field_requirements
-                trong config theo guarantee_type). Chuẩn hoá tên field về canonical bằng field_aliases; chuẩn hoá số
-                tiền và ngày (dd/mm/yyyy). Tự suy hệ biến từ classification:
-                - Nếu currency=VND & language=TV & guarantee_type=BLDT → dùng $ND (nd_variable_map): key = $NDxxx.
-                - Còn lại → dùng cụm [...] (placeholder_map): key = placeholder đại diện.
-                Mỗi biến kèm confidence 0-100. Chỉ trả JSON (không markdown).
-                Schema: {"variables":{"<key>":{"value","confidence"}}}
-            - role: user
-              text: |
-                classification: {{#classify.text#}}
-                config: {{#start.config_json#}}
-                segments: {{#segment.text#}}
-                thư: {{#start.raw_text#}}
-      - id: validate
-        type: custom
-        position: { x: 1240, y: 300 }
-        data:
-          type: llm
-          title: "LLM4 Validate"
-          model:
-            provider: openai
-            name: gpt-4o
-            mode: chat
-            completion_params:
-              temperature: 0
-          context:
-            enabled: false
-            variable_selector: []
-          vision:
-            enabled: false
-          prompt_template:
-            - role: system
-              text: |
-                Kiểm tra: field bắt buộc còn thiếu (field_requirements theo guarantee_type), số tiền bằng số vs bằng
-                chữ, ngày hợp lệ, hiệu lực hợp lý. Chỉ trả JSON (không markdown).
-                Schema: {"missing":["field_code"],"warnings":["mô tả ngắn"]}
-            - role: user
-              text: |
-                config: {{#start.config_json#}}
-                classification: {{#classify.text#}}
-                variables: {{#extract.text#}}
+                ===== HẾT =====
+                Trả về JSON đúng schema.
       - id: end
         type: custom
-        position: { x: 1540, y: 300 }
+        position: { x: 680, y: 300 }
         data:
           type: end
           title: "End"
           outputs:
-            - variable: classification
-              value_selector: [classify, text]
-            - variable: segments
-              value_selector: [segment, text]
-            - variable: variables
-              value_selector: [extract, text]
-            - variable: validation
-              value_selector: [validate, text]
+            - variable: result
+              value_selector: [llm, text]

@@ -1,138 +1,66 @@
 /**
- * Generate.gs — action=generate (API_CONTRACT §generate, DOCX_GENERATOR.md).
- * Sinh DOCX theo 3 route, giữ format bằng Google Doc + replaceText → export .docx.
+ * Generate.gs — action=generate (DOCX_GENERATOR.md v2).
  *
- *   OFFLINE      → chọn template offline (TEMPLATE_REGISTRY) → replace [...] bằng giá trị.
- *   ONLINE_B8ZB  → chọn template B8ZB TT79 → replace MERGEFIELD «$NDxxx» bằng giá trị.
- *   KH_UPLOAD    → dùng CHÍNH thư KH (/INPUT) làm khung → thay đoạn BIEN đã user-edit,
- *                  giữ nguyên KHUNG ("sát thư khách hàng").
+ * Mẫu thư viện đã chuẩn hoá (TEMPLATE/<id>.docx) chứa token {{SLOT}} nằm trọn trong 1 run.
+ * Sinh thư = giải nén docx → thay token trong document/header/footer XML (SGCore.fillXml)
+ * → nén lại. KHÔNG đi qua Google Docs → giữ nguyên 100% định dạng Word (logo, header, bảng, font).
+ * Slot thiếu dữ liệu → "…………" tô vàng; chặn xuất nếu còn thiếu mà cán bộ chưa xác nhận.
  *
- * Request:  { doc_id, route, classification, variables }
- * Response: { ok, output_path, download_url, warnings, leftover_vars }
+ * Request:  { token, doc_id, template_id, fields:{...}, allow_missing? }
+ * Response: { ok, doc_id, file_name, content_base64, missing[], warnings[] }
  */
-function handleGenerate_(body) {
+var DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+var FILL_PARTS = /^word\/(document|header\d*|footer\d*)\.xml$/;
+
+function handleGenerate_(body, user) {
   var docId = body.doc_id;
-  if (!docId) throw err_('PARSE_ERROR', 'Thiếu doc_id');
-  var route = body.route || 'KH_UPLOAD';
-  var variables = body.variables || {};
-  var classification = body.classification || {};
+  assertOwner_(docId, user);
+  var tpl = findTemplateMeta_(body.template_id);
+  if (!tpl) throw err_('TEMPLATE_NOT_FOUND', 'Không có mẫu ' + body.template_id + ' trong danh mục');
 
-  var built = (route === 'KH_UPLOAD')
-    ? reproduceCustomer_(docId, variables)
-    : fillTemplate_(route, classification, variables);
+  var n = SGCore.normalizeFields(body.fields || {});
+  var rs = SGCore.renderSlots(tpl.slots, n.fields);
+  if (rs.missing.length && !body.allow_missing) {
+    var e = err_('MISSING_FIELDS', 'Còn ' + rs.missing.length + ' mục chưa có dữ liệu: ' + rs.missing.join(', '));
+    throw e;
+  }
 
-  // Xuất DOCX → /OUTPUT
-  var docxBlob = gdocToDocxBlob_(built.gdocId, docId + '.docx');
-  try { DriveApp.getFileById(built.gdocId).setTrashed(true); } catch (_) {}
-  var existing = findFile_('OUTPUT', docId + '.docx');
-  if (existing) existing.setTrashed(true);
-  var outFile = subFolder_('OUTPUT').createFile(docxBlob);
+  var tplFile = findFile_('TEMPLATE', tpl.id + '.docx');
+  if (!tplFile) throw err_('TEMPLATE_NOT_FOUND', 'Chưa nạp file mẫu ' + tpl.id + '.docx — admin bấm ⟳ Cập nhật mẫu (xem MAU_THU)');
 
-  logLine_('generate doc_id=' + docId + ' route=' + route +
-    ' template=' + (built.template || '-') + ' leftover=' + built.leftover.length);
+  var outName = docId + '__' + tpl.id + '.docx';
+  var out = fillDocx_(tplFile.getBlob(), rs.values, rs.missing, outName);
+  saveBlob_('OUTPUT', outName, out);
+
+  // Truy vết: lưu bộ dữ liệu cuối cùng đã dùng để sinh thư
+  var rec = readJson_('EXTRACTED', docId + '.json') || { doc_id: docId };
+  rec.final = {
+    template_id: tpl.id, template_label: tpl.label, fields: n.fields, missing: rs.missing,
+    generated_at: new Date().toISOString(), generated_by: user.username, output_file: outName,
+  };
+  writeJson_('EXTRACTED', docId + '.json', rec);
+  upsertJob_(docId, { status: rs.missing.length ? 'GENERATED_INCOMPLETE' : 'GENERATED', template_id: tpl.id, output_file: outName });
 
   return {
     ok: true,
-    output_path: '/OUTPUT/' + docId + '.docx',
-    download_url: outFile.getDownloadUrl() || outFile.getUrl(),
-    warnings: built.leftover.length ? ['Còn biến chưa điền trong thư: ' + built.leftover.join(', ')] : [],
-    leftover_vars: built.leftover,
+    doc_id: docId,
+    file_name: 'BL-' + tpl.guarantee_type + '-' + docId + '.docx',
+    content_base64: Utilities.base64Encode(out.getBytes()),
+    missing: rs.missing,
+    warnings: n.warnings,
   };
 }
 
-/** Route OFFLINE / ONLINE_B8ZB — điền template chuẩn. */
-function fillTemplate_(route, classification, variables) {
-  var row = selectTemplate_(classification, route);
-  if (!row) throw err_('TEMPLATE_NOT_FOUND', 'Không tìm mẫu phù hợp trong REGISTRY (route=' + route + ')');
-  var tplFile = findFile_('TEMPLATE', row.template_file);
-  if (!tplFile) throw err_('TEMPLATE_NOT_FOUND', 'Chưa upload template vào /TEMPLATE: ' + row.template_file);
-
-  var gdocId = docxToGdoc_(tplFile.getBlob(), row.template_id + '__gen');
-  var doc = DocumentApp.openById(gdocId);
-  var b = doc.getBody();
-
-  Object.keys(variables).forEach(function (key) {
-    var val = String(variables[key] == null ? '' : variables[key]);
-    replaceLiteral_(b, key, val);                 // [ghi ...] hoặc $ND001
-    if (key.charAt(0) === '$') replaceLiteral_(b, '«' + key + '»', val); // MERGEFIELD dạng «$ND001»
+/** Giải nén docx, điền token trong các part văn bản, nén lại. */
+function fillDocx_(blob, values, missing, name) {
+  var parts = Utilities.unzip(blob.copyBlob().setContentType('application/zip'));
+  var out = parts.map(function (b) {
+    var n = b.getName();
+    if (!FILL_PARTS.test(n)) return b;
+    var x = b.getDataAsString('UTF-8');
+    if (x.indexOf('{{') < 0) return b;
+    var filled = SGCore.fillXml(x, values, missing).xml;
+    return Utilities.newBlob('', 'application/xml', n).setDataFromString(filled, 'UTF-8');
   });
-  doc.saveAndClose();
-
-  return { gdocId: gdocId, template: row.template_file, leftover: leftoverVars_(gdocId) };
-}
-
-/** Route KH_UPLOAD — dựng lại trên chính thư KH, chỉ thay BIEN đã đổi. */
-function reproduceCustomer_(docId, variables) {
-  var input = inputFileFor_(docId);
-  if (!input) throw err_('TEMPLATE_NOT_FOUND', 'Không thấy thư KH trong /INPUT: ' + docId);
-  var gdocId = docxToGdoc_(input.getBlob(), docId + '__gen');
-  var doc = DocumentApp.openById(gdocId);
-  var b = doc.getBody();
-
-  var extracted = readExtracted_(docId);
-  var segs = (extracted && extracted.segments) || [];
-  segs.forEach(function (s) {
-    if (s.kind !== 'BIEN' || !s.placeholder) return;
-    var v = variables[s.placeholder];
-    if (v == null || String(v) === String(s.text)) return; // không đổi → giữ nguyên
-    replaceLiteral_(b, s.text, String(v)); // thay giá trị gốc bằng giá trị đã user-edit
-  });
-  doc.saveAndClose();
-
-  return { gdocId: gdocId, template: '(thư KH)', leftover: [] };
-}
-
-/**
- * selectTemplate_ — chọn 1 mẫu từ TEMPLATE_REGISTRY (Sheet) theo classification.
- * Ràng buộc: cùng guarantee_type + source + active; xếp hạng theo template_type/method/JV/sector/envelope.
- */
-function selectTemplate_(c, route) {
-  var id = SG.configSheetId();
-  if (!id) throw err_('TEMPLATE_NOT_FOUND', 'CONFIG_SHEET_ID chưa đặt — không đọc được REGISTRY');
-  var ss = SpreadsheetApp.openById(id);
-  var rows = readTable_(ss, 'TEMPLATE_REGISTRY').filter(function (r) {
-    return String(r.active).toLowerCase() === 'true' && r.source === route;
-  });
-  if (!rows.length) return null;
-
-  var jv = (c.joint_venture && c.joint_venture !== 'KO') ? 'LD' : 'KO';
-  function score(r) {
-    if (r.guarantee_type !== c.guarantee_type) return -1; // BL phải khớp
-    var s = 100;
-    if (route === 'ONLINE_B8ZB') { if (r.circular === 'TT79') s += 10; }
-    else if (r.template_type === c.template_type) s += 20;
-    if (r.method === c.method) s += 5;
-    if (r.joint_venture === jv) s += 5;
-    if (c.sector && r.sector === c.sector) s += 8;
-    if (c.envelope && r.envelope === c.envelope) s += 8;
-    return s;
-  }
-  var best = null, bs = -1;
-  rows.forEach(function (r) { var sc = score(r); if (sc > bs) { bs = sc; best = r; } });
-  return bs >= 0 ? best : null;
-}
-
-// ── Helpers ──
-// docxToGdoc_ / gdocToDocxBlob_ → gas/Convert.gs (Drive REST, không cần Advanced Service).
-
-/** replaceText an toàn: escape regex trong chuỗi cần tìm. */
-function replaceLiteral_(body, find, value) {
-  if (!find) return;
-  var esc = String(find).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  body.replaceText(esc, value == null ? '' : String(value));
-}
-
-/** Quét biến còn sót ([...] hoặc «$ND...») trong doc. */
-function leftoverVars_(gdocId) {
-  var text = DocumentApp.openById(gdocId).getBody().getText();
-  var out = [];
-  (text.match(/\[[^\]\n]{1,60}\]/g) || []).forEach(function (m) { if (out.indexOf(m) < 0) out.push(m); });
-  (text.match(/«[^»\n]{1,40}»/g) || []).forEach(function (m) { if (out.indexOf(m) < 0) out.push(m); });
-  return out;
-}
-
-function readExtracted_(docId) {
-  var f = findFile_('EXTRACTED', docId + '.json');
-  if (!f) return null;
-  try { return JSON.parse(f.getBlob().getDataAsString()); } catch (_) { return null; }
+  return Utilities.zip(out, name).setContentType(DOCX_MIME);
 }

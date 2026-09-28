@@ -1,5 +1,8 @@
 # TEMPLATE SELECTION LOGIC — Smart Guarantee
 
+> **ℹ️ v2 (2026-09-28):** chọn mẫu = xếp hạng catalog theo phân loại AI (`gas/Core.gs::rankTemplates`), không còn route OFFLINE/ONLINE_B8ZB/KH_UPLOAD. Các chiều nghiệp vụ dưới đây vẫn đúng.
+
+
 > **Nguồn sự thật:** `Tham khao/Logic hiển thị.xlsx` (sheet *Logic hiển thị*) — logic **chọn mẫu bằng tay** đang dùng trên BIZ. Đây là tri thức để AI **nhận diện** các chiều dữ liệu và **đối chiếu** khung mẫu. Bộ template thật: `Tham khao/` (4 thư mục, 96 file .docx).
 >
 > ⚠️ Trọng tâm PoC KHÔNG chỉ là "chọn 1 template". Xem `VARIABLE_SEGMENTATION.md` — bài toán lõi là **bóc tách khung vs biến trên chính thư KH upload**; bảng dưới đây là tri thức nền cho việc đó.

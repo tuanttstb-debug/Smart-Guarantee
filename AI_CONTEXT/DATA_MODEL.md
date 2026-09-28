@@ -1,5 +1,8 @@
 # DATA MODEL — Smart Guarantee
 
+> **⚠️ v2 (2026-09-28):** Sheet config 8 tab đã bỏ. Dữ liệu: `gas/Core.gs::FIELDS` (24 trường) + `CONFIG/catalog.json` + Sheet vận hành USERS/BRANCHES/JOBS/AUDIT.
+
+
 > Cập nhật theo **`Tham khao/Logic hiển thị.xlsx`** (logic chọn mẫu thật). Tư duy: **`Template + Dimension + Rule Engine`**. Metadata sống trong **Google Sheet**, sửa không cần deploy. Logic chọn mẫu chi tiết: `TEMPLATE_SELECTION.md`. Bài toán lõi (khung vs biến): `VARIABLE_SEGMENTATION.md`.
 
 ## A. 9 Dimensions (đã đối chiếu logic thật)

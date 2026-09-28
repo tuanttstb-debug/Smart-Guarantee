@@ -1,5 +1,8 @@
 # SYSTEM ARCHITECTURE — Smart Guarantee
 
+> **⚠️ v2 (2026-09-28):** kiến trúc hiện hành xem `README.md` (root) + `API_CONTRACT.md` + `DOCX_GENERATOR.md`. File này là thiết kế v1.
+
+
 > PoC/Demo TPBank. Nguyên tắc: nhanh · rẻ · không over-engineering · đủ khả năng mở rộng. Chi tiết lớp dữ liệu/AI/API: `DATA_MODEL.md`, `DIFY_WORKFLOW.md`, `API_CONTRACT.md`, `DRIVE_STRUCTURE.md`, `DOCX_GENERATOR.md`.
 
 ## 1. Sơ đồ tổng thể

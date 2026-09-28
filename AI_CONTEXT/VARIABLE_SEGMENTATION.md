@@ -1,5 +1,8 @@
 # VARIABLE SEGMENTATION — Bài toán lõi Smart Guarantee
 
+> **⚠️ LỖI THỜI từ v2 (2026-09-28):** không còn segmentation khung/biến trên thư KH. Chỗ trống mẫu được gắn slot theo ngữ cảnh — xem `DOCX_GENERATOR.md` + `gas/Normalize.gs`. Giữ file làm tri thức nền về placeholder `[...]`.
+
+
 > **Trọng tâm dự án** (chốt 2026-08-17). KHÔNG chỉ "chọn 1 template TPBank rồi điền". Mục tiêu: nhận **file thư do khách hàng tự upload** → **bóc tách đâu là văn bản khung (mẫu) cố định, đâu là biến (chỗ cần điền)** → trả lại **thư soạn sát với thư khách hàng**, biến đã nhận diện & điền được.
 
 ## 1. Định nghĩa bài toán

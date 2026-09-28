@@ -3,156 +3,186 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
   <title>Smart Guarantee — TPBank</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%237B2CBF%27/%3E%3Cpath d=%27M16 6l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V9z%27 fill=%27%23fff%27/%3E%3C/svg%3E" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link href="assets/css/theme.css" rel="stylesheet" />
 </head>
 <body>
-  <!-- ═══ Topbar (tím mảnh) ═══ -->
+  <!-- ═══ Topbar ═══ -->
   <header class="sg-topbar">
     <div class="container-xl d-flex align-items-center gap-2">
       <span class="sg-topbar__mark"></span>
       <span class="sg-topbar__brand">TPBank</span>
       <span class="sg-topbar__sep">·</span>
       <span class="sg-topbar__app">Smart Guarantee</span>
-      <span class="badge sg-badge-poc ms-2">PoC</span>
+      <span class="badge sg-badge-poc ms-2" id="envBadge">Pilot</span>
       <span class="ms-auto sg-topbar__doc" id="docIdLabel"></span>
+      <div class="sg-user d-none" id="userBox">
+        <span id="userName"></span>
+        <button class="btn btn-sm sg-btn-ghost d-none" id="rebuildBtn" type="button" title="Quét TEMPLATE_GOC, chuẩn hoá lại mẫu đã sửa">⟳ Cập nhật mẫu</button>
+        <button class="btn btn-sm sg-btn-ghost" id="newBtn" type="button" title="Hồ sơ mới">＋ Hồ sơ mới</button>
+        <button class="btn btn-sm sg-btn-ghost" id="logoutBtn" type="button">Đăng xuất</button>
+      </div>
     </div>
   </header>
 
-  <main class="container-xl py-4">
-    <!-- ═══ 5-step nav ═══ -->
-    <ul class="nav sg-steps mb-3" id="sgSteps" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="nav-link active" data-step="1" data-bs-toggle="tab" data-bs-target="#tab-upload" type="button" role="tab">
-          <span class="sg-steps__num">1</span> Upload
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" data-step="2" data-bs-toggle="tab" data-bs-target="#tab-classify" type="button" role="tab" disabled>
-          <span class="sg-steps__num">2</span> Phân loại
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" data-step="3" data-bs-toggle="tab" data-bs-target="#tab-extract" type="button" role="tab" disabled>
-          <span class="sg-steps__num">3</span> Dữ liệu
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" data-step="4" data-bs-toggle="tab" data-bs-target="#tab-segments" type="button" role="tab" disabled>
-          <span class="sg-steps__num">4</span> Biến &amp; Khung
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" data-step="5" data-bs-toggle="tab" data-bs-target="#tab-generate" type="button" role="tab" disabled>
-          <span class="sg-steps__num">5</span> Xuất
-        </button>
-      </li>
-    </ul>
-
-    <div class="tab-content">
-      <!-- ─── Tab 1: Upload ─── -->
-      <section class="tab-pane fade show active" id="tab-upload" role="tabpanel">
-        <div class="sg-card">
-          <h2 class="sg-card__title">Tải thư bảo lãnh của khách hàng</h2>
-          <p class="text-muted mb-4">Hỗ trợ PDF hoặc Word (.doc/.docx). Hệ thống sẽ nhận diện khung mẫu, bóc tách biến và soạn lại thư sát bản gốc.</p>
-
-          <label id="dropzone" class="sg-dropzone" for="fileInput">
-            <input type="file" id="fileInput" accept=".pdf,.doc,.docx" hidden />
-            <div class="sg-dropzone__icon">⬆</div>
-            <div class="sg-dropzone__main">Kéo &amp; thả tệp vào đây, hoặc <span class="sg-link">chọn tệp</span></div>
-            <div class="sg-dropzone__hint">PDF, DOC, DOCX — tối đa 20&nbsp;MB</div>
-          </label>
-
-          <div id="fileMeta" class="sg-filemeta d-none">
-            <span class="sg-filemeta__icon">📄</span>
-            <div class="flex-grow-1">
-              <div class="sg-filemeta__name" id="fileName"></div>
-              <div class="sg-filemeta__size text-muted" id="fileSize"></div>
-            </div>
-            <button class="btn btn-sm btn-outline-secondary" id="fileClear" type="button">Đổi tệp</button>
-          </div>
-
-          <div class="mt-4 d-flex align-items-center gap-3">
-            <button class="btn btn-primary btn-lg px-4" id="analyzeBtn" disabled>Phân tích bằng AI</button>
-            <span class="sg-inline-status" id="uploadStatus"></span>
-          </div>
-        </div>
-      </section>
-
-      <!-- ─── Tab 2: Classification ─── -->
-      <section class="tab-pane fade" id="tab-classify" role="tabpanel">
-        <div class="sg-card">
-          <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
-            <div>
-              <h2 class="sg-card__title mb-1">Kết quả phân loại</h2>
-              <p class="text-muted mb-0">AI nhận diện các chiều nghiệp vụ của thư và định tuyến xử lý.</p>
-            </div>
-            <span class="sg-route" id="routeBadge"></span>
-          </div>
-          <div class="sg-dim-grid mt-4" id="classifyGrid"></div>
-          <div class="mt-4 text-end">
-            <button class="btn btn-primary" data-goto="3">Tiếp tục → Dữ liệu bóc tách</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ─── Tab 3: Extracted fields ─── -->
-      <section class="tab-pane fade" id="tab-extract" role="tabpanel">
-        <div class="sg-card">
-          <h2 class="sg-card__title mb-1">Dữ liệu bóc tách</h2>
-          <p class="text-muted">Các trường đã nhận diện. <span class="sg-conf-legend"><i class="sg-dot sg-dot--low"></i> độ tin cậy thấp — vui lòng kiểm tra &amp; chỉnh sửa.</span></p>
-          <div class="table-responsive">
-            <table class="table sg-table align-middle mb-0">
-              <thead>
-                <tr><th style="width:34%">Trường</th><th>Giá trị</th><th style="width:120px" class="text-center">Tin cậy</th></tr>
-              </thead>
-              <tbody id="extractBody"></tbody>
-            </table>
-          </div>
-          <div class="mt-4 text-end">
-            <button class="btn btn-primary" data-goto="4">Tiếp tục → Biến &amp; Khung</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ─── Tab 4: Segmentation ─── -->
-      <section class="tab-pane fade" id="tab-segments" role="tabpanel">
-        <div class="sg-card">
-          <h2 class="sg-card__title mb-1">Khung mẫu &amp; biến</h2>
-          <p class="text-muted">Phần <span class="sg-seg-chip sg-seg-chip--khung">khung cố định</span> giữ nguyên; phần <span class="sg-seg-chip sg-seg-chip--bien">biến</span> được thay bằng giá trị bóc tách.</p>
-          <div class="sg-segview" id="segView"></div>
-          <div class="mt-4 text-end">
-            <button class="btn btn-primary" data-goto="5">Tiếp tục → Xuất thư</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ─── Tab 5: Generate ─── -->
-      <section class="tab-pane fade" id="tab-generate" role="tabpanel">
-        <div class="sg-card text-center">
-          <h2 class="sg-card__title">Soạn &amp; xuất thư bảo lãnh</h2>
-          <p class="text-muted mb-4">Sinh file Word sát với thư khách hàng, biến đã điền &amp; kiểm tra.</p>
-          <button class="btn btn-primary btn-lg px-5" id="generateBtn">Sinh thư (.docx)</button>
-          <div class="sg-inline-status justify-content-center mt-3" id="generateStatus"></div>
-          <div id="downloadBox" class="sg-download d-none">
-            <span class="sg-filemeta__icon">✅</span>
-            <div class="text-start flex-grow-1">
-              <div class="fw-semibold" id="outputName">Thư bảo lãnh.docx</div>
-              <div class="text-muted small">Đã sẵn sàng tải xuống</div>
-            </div>
-            <a class="btn btn-primary" id="downloadLink" target="_blank" rel="noopener">Tải xuống</a>
-          </div>
-        </div>
-      </section>
+  <!-- ═══ Đăng nhập ═══ -->
+  <main class="container-xl py-5 d-none" id="loginView">
+    <div class="sg-card sg-login mx-auto">
+      <h1 class="sg-card__title">Đăng nhập</h1>
+      <p class="text-muted">Tài khoản do quản trị Smart Guarantee cấp.</p>
+      <form id="loginForm" autocomplete="on">
+        <label class="form-label" for="loginUser">Tên đăng nhập</label>
+        <input class="form-control mb-3" id="loginUser" autocomplete="username" required />
+        <label class="form-label" for="loginPass">Mật khẩu</label>
+        <input class="form-control mb-3" id="loginPass" type="password" autocomplete="current-password" required />
+        <button class="btn btn-primary w-100" id="loginBtn" type="submit">Đăng nhập</button>
+        <div class="sg-inline-status mt-3" id="loginStatus" role="alert"></div>
+      </form>
     </div>
+  </main>
 
-    <footer class="sg-foot">Smart Guarantee · PoC/Demo TPBank — Document Intelligence · <span id="modeTag"></span></footer>
+  <!-- ═══ Ứng dụng ═══ -->
+  <main class="container-xl py-4 d-none" id="appView">
+    <ol class="sg-stepper" id="stepper">
+      <li data-step="1" class="is-active"><span>1</span> Tải thư khách hàng</li>
+      <li data-step="2"><span>2</span> Rà soát dữ liệu &amp; chọn mẫu</li>
+      <li data-step="3"><span>3</span> Xem trước &amp; xuất thư</li>
+    </ol>
+
+    <!-- ─── Bước 1 ─── -->
+    <section id="step1" class="sg-step">
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="sg-card">
+            <h2 class="sg-card__title">Tải thư / mẫu bảo lãnh của khách hàng</h2>
+            <p class="text-muted mb-4">PDF (kể cả bản scan) hoặc Word. Hệ thống đọc thư, nhận diện loại bảo lãnh, chọn mẫu thư viện TPBank phù hợp và điền sẵn dữ liệu để anh/chị rà soát.</p>
+
+            <label id="dropzone" class="sg-dropzone" for="fileInput" tabindex="0">
+              <input type="file" id="fileInput" accept=".pdf,.doc,.docx" hidden />
+              <div class="sg-dropzone__icon">⬆</div>
+              <div class="sg-dropzone__main">Kéo &amp; thả tệp vào đây, hoặc <span class="sg-link">chọn tệp</span></div>
+              <div class="sg-dropzone__hint">PDF, DOC, DOCX — tối đa 20&nbsp;MB</div>
+            </label>
+            <div id="fileMeta" class="sg-filemeta d-none">
+              <span class="sg-filemeta__icon">📄</span>
+              <div class="flex-grow-1">
+                <div class="sg-filemeta__name" id="fileName"></div>
+                <div class="sg-filemeta__size text-muted" id="fileSize"></div>
+              </div>
+              <button class="btn btn-sm btn-outline-secondary" id="fileClear" type="button">Đổi tệp</button>
+            </div>
+
+            <div class="mt-4">
+              <div class="form-label mb-2">Hình thức phát hành</div>
+              <div class="sg-seg" role="radiogroup" id="methodSeg">
+                <button type="button" data-v="ĐT" class="is-on" role="radio" aria-checked="true">Thư điện tử (ký số)</button>
+                <button type="button" data-v="TG" role="radio" aria-checked="false">Thư giấy</button>
+              </div>
+            </div>
+
+            <div class="mt-4 d-flex align-items-center gap-3 flex-wrap">
+              <button class="btn btn-primary btn-lg px-4" id="analyzeBtn" disabled>Phân tích thư</button>
+              <span class="sg-inline-status" id="uploadStatus" role="status"></span>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="sg-card sg-card--tight">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h3 class="sg-card__sub mb-0">Hồ sơ gần đây</h3>
+              <button class="btn btn-sm btn-link p-0" id="historyReload" type="button">Tải lại</button>
+            </div>
+            <ul class="sg-history" id="historyList"><li class="text-muted small">Đang tải…</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Bước 2 ─── -->
+    <section id="step2" class="sg-step d-none">
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="sg-card sg-card--tight sg-sticky">
+            <h3 class="sg-card__sub">Mẫu thư TPBank</h3>
+            <select class="form-select" id="tplSelect" aria-label="Mẫu thư"></select>
+            <div class="sg-tplwhy mt-2" id="tplWhy"></div>
+            <button class="btn btn-sm btn-link px-0 mt-1" id="tplBrowseBtn" type="button">Chọn mẫu khác trong thư viện…</button>
+            <div class="sg-browse d-none mt-2" id="tplBrowse">
+              <div class="d-flex gap-2 mb-2">
+                <select class="form-select form-select-sm" id="browseType"></select>
+                <input class="form-control form-control-sm" id="browseQ" placeholder="Lọc: TT22, xây lắp, liên danh…" />
+              </div>
+              <ul class="sg-browse__list" id="browseList"></ul>
+            </div>
+
+            <div class="sg-chips mt-3" id="clsChips"></div>
+            <div id="alerts" class="mt-3"></div>
+
+            <details class="sg-source mt-3" id="sourceBox">
+              <summary>Văn bản thư gốc (đối chiếu)</summary>
+              <pre id="sourceText" tabindex="0"></pre>
+            </details>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="sg-card">
+            <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap mb-2">
+              <div>
+                <h2 class="sg-card__title mb-1">Dữ liệu điền vào thư</h2>
+                <p class="text-muted small mb-0"><span class="sg-dot sg-dot--low"></span> độ tin cậy thấp — kiểm tra kỹ · <span class="sg-dot sg-dot--miss"></span> mẫu cần nhưng chưa có. Di chuột vào 🔎 để xem đoạn trích từ thư gốc.</p>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="showAll" />
+                <label class="form-check-label small" for="showAll">Hiện mọi trường</label>
+              </div>
+            </div>
+            <form id="fieldForm" autocomplete="off" novalidate></form>
+            <div class="mt-4 d-flex justify-content-between">
+              <button class="btn btn-outline-secondary" data-goto="1" type="button">← Tải thư khác</button>
+              <button class="btn btn-primary" data-goto="3" type="button">Xem trước thư →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Bước 3 ─── -->
+    <section id="step3" class="sg-step d-none">
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="sg-paper" id="paper" aria-label="Xem trước thư"></div>
+        </div>
+        <div class="col-lg-4">
+          <div class="sg-card sg-card--tight sg-sticky">
+            <h3 class="sg-card__sub">Kiểm soát trước khi xuất</h3>
+            <div class="small text-muted mb-2" id="paperTpl"></div>
+            <div id="checkList"></div>
+            <div class="form-check mt-3">
+              <input class="form-check-input" type="checkbox" id="confirmReview" />
+              <label class="form-check-label" for="confirmReview">Tôi đã đối chiếu nội dung thư với hồ sơ gốc và chịu trách nhiệm về dữ liệu đã nhập.</label>
+            </div>
+            <div class="form-check mt-2 d-none" id="allowMissingBox">
+              <input class="form-check-input" type="checkbox" id="allowMissing" />
+              <label class="form-check-label" for="allowMissing">Xuất kèm ô còn trống (tô vàng trong file) để bổ sung tay.</label>
+            </div>
+            <button class="btn btn-primary btn-lg w-100 mt-3" id="generateBtn" disabled>Tải thư (.docx)</button>
+            <div class="sg-inline-status mt-2" id="generateStatus" role="status"></div>
+            <button class="btn btn-outline-secondary w-100 mt-3" data-goto="2" type="button">← Sửa dữ liệu</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="sg-foot">Smart Guarantee · TPBank — Pilot nội bộ · <span id="modeTag"></span></footer>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="assets/js/config.js"></script>
+  <script src="assets/js/core.js"></script>
   <script src="assets/js/mock.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/app.js"></script>
